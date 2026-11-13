@@ -26,6 +26,7 @@ var last_line := ""
 var transition: Tween
 var last_snapshot: Dictionary = {}
 var owner_pos := Vector2(650,642)
+var ui_save_path := SAVE_UI
 var owner_sprite: TextureRect
 var heading_font: SystemFont
 var conversation_font: SystemFont
@@ -165,8 +166,9 @@ func refresh() -> void:
 	if view == "floor": draw_floor(s)
 	else: draw_counter(s)
 	draw_header(s)
+	if drawer == "menu": draw_menu()
 	box(root,Rect2(0,684,1280,36),Color("201817"))
-	label(root,message if message != "" else "Offline prototype  •  Structured actions, no live AI",Rect2(20,690,1000,25),15,MUTED)
+	label(root,message if message != "" else ("WASD: walk  •  Select a shelf, counter or stockroom  •  Offline prototype" if view == "floor" else "Offline prototype  •  Structured actions, no live AI"),Rect2(20,690,1000,25),15,MUTED)
 	btn(root,"Debug",Rect2(1175,688,86,27),func(): debug = not debug; refresh())
 	if debug: draw_debug()
 
@@ -177,6 +179,7 @@ func draw_header(s: Dictionary) -> void:
 	label(root,"%dg" % s.gold,Rect2(490,19,150,30),20,GOLD)
 	var status_text := str(s.phase).capitalize()
 	btn(root,"Shop: " + status_text,Rect2(648,10,148,42),func(): open_status())
+	btn(root,"Menu",Rect2(811,10,115,42),func(): open_drawer("menu"))
 	btn(root,"Shop Floor",Rect2(940,10,150,42),func(): switch_view("floor"),false,view == "floor")
 	btn(root,"Counter" + (" •" if waiting(s) else ""),Rect2(1100,10,160,42),func(): switch_view("counter"),false,view == "counter")
 
@@ -260,7 +263,7 @@ func draw_counter(s: Dictionary) -> void:
 		box(root,Rect2(944,78,316,124))
 		pic(root,ITEM,Rect2(955,91,74,91))
 		label(root,str(i.name),Rect2(1038,91,207,34),21 if str(i.name).length() > 18 else 24)
-		label(root,"Condition %d%%\nAsking %dg" % [i.condition_pct,i.asking],Rect2(1038,130,207,55),17,GOLD)
+		label(root,"Condition %d%%\nAsking %dg" % [i.condition_pct,n.ask],Rect2(1038,130,207,55),17,GOLD)
 	btn(root,"Hide ledger" if ledger else "View ledger",Rect2(1065,213,194,40),func(): ledger = not ledger; refresh())
 	if ledger: draw_ledger()
 	box(root,Rect2(22,518,858,159),Color("30221c"))
@@ -301,10 +304,31 @@ func draw_responses(s: Dictionary) -> void:
 	label(root,"Choose your response",Rect2(38,182,455,35),24)
 	make_price(root,Rect2(38,224,175,40),price_value)
 	btn(root,"Counteroffer",Rect2(223,224,270,40),func(): act("counter","I propose %dg." % price_value,true))
-	var rows := [["evidence","Show appraisal",true],["reassure","Acknowledge their need",true],["patient","Bargain patiently",true],["flatter","Flatter",true],["small_talk","Small talk",false],["firm","Stand firm",false],["ban_threat","Threaten a ban",false],["insult","Insult",false],["dismiss","Dismiss customer",false],["violence_threat","Threaten violence",false]]
+	var rows := [["evidence","Show appraisal",true],["reassure","Acknowledge their need",true],["patient","Bargain patiently",true],["flatter","Flatter",true],["small_talk","Small talk",false],["firm","Stand firm",false],["ban_threat","Threaten a ban",false],["insult","Insult",false],["dismiss","Dismiss customer",false],["violence_threat","Threaten violence",false],["ban_confirm","Ban 30 days…",false],["end","End conversation",false]]
 	for idx in range(rows.size()):
 		var row: Array = rows[idx]; var kind: String = row[0]; var caption: String = row[1]; var priced: bool = row[2]
-		btn(root,caption,Rect2(38+(idx%2)*230,275+int(idx/2)*42,220,36),func(): act(kind,caption + (" • %dg" % price_value if priced else ""),priced,{"affront":true} if kind == "firm" else {}))
+		btn(root,caption,Rect2(38+(idx%2)*230,272+int(idx/2)*37,220,34),func(): choose_response(kind,caption,priced))
+
+func choose_response(kind: String, caption: String, priced: bool) -> void:
+	if kind != "ban_confirm":
+		act(kind,caption + (" • %dg" % price_value if priced else ""),priced,{"affront":true} if kind == "firm" else {})
+		return
+	var n: Dictionary = shop.snapshot().session
+	var dialog := ConfirmationDialog.new()
+	dialog.title = "Enact a 30-day ban?"
+	dialog.dialog_text = "This bars the customer from returning and ends the encounter without a sale."
+	add_child(dialog)
+	dialog.confirmed.connect(func():
+		command("act",{"session":n.session,"revision":n.revision,"action":{"type":"ban_confirm","days":30}},"You are barred from this shop.")
+		dialog.queue_free())
+	dialog.canceled.connect(func(): dialog.queue_free())
+	dialog.popup_centered()
+
+func draw_menu() -> void:
+	box(root,Rect2(805,70,249,174))
+	label(root,"Shop menu",Rect2(821,84,205,32),23)
+	btn(root,"Save game",Rect2(821,122,217,43),func(): save_game(),false,true)
+	btn(root,"Load game",Rect2(821,173,217,43),func(): load_game())
 
 func draw_debug() -> void:
 	box(root,Rect2(20,70,315,178),Color("241d1b"))
@@ -316,18 +340,19 @@ func draw_debug() -> void:
 func save_game() -> void:
 	var r: Dictionary = shop.save()
 	if r.ok:
-		var f := FileAccess.open(SAVE_UI,FileAccess.WRITE)
+		var f := FileAccess.open(ui_save_path,FileAccess.WRITE)
 		if f: f.store_string(JSON.stringify({"revision":shop.snapshot().revision,"view":view,"ledger":ledger,"history":history,"history_session":history_session,"price":price_value,"owner_pos":[owner_pos.x,owner_pos.y]})); f.close()
 	message = "Saved" if r.ok else str(r.get("error","Save failed")); refresh()
 
 func load_game() -> void:
 	var r: Dictionary = shop.load_save()
 	if r.ok:
-		var s := shop.snapshot(); var ui: Variant = Shop.parse_save(FileAccess.get_file_as_string(SAVE_UI)) if FileAccess.file_exists(SAVE_UI) else null
+		var s := shop.snapshot(); var ui: Variant = Shop.parse_save(FileAccess.get_file_as_string(ui_save_path)) if FileAccess.file_exists(ui_save_path) else null
 		view = "counter" if active(s) else "floor"; ledger = false; history=[]; history_session=-1
 		if ui is Dictionary and int(ui.get("revision",-1)) == int(s.revision):
 			view = "counter" if ui.get("view","") == "counter" else "floor"; ledger = bool(ui.get("ledger",false)); history = ui.get("history",[]); history_session = int(ui.get("history_session",-1)); price_value = int(ui.get("price",650))
-			var saved_pos: Array = ui.get("owner_pos",[650,642]); if saved_pos.size() == 2: owner_pos = Vector2(float(saved_pos[0]),float(saved_pos[1]))
+			var saved_pos: Array = ui.get("owner_pos",[650,642])
+			if saved_pos.size() == 2: owner_pos = Vector2(float(saved_pos[0]),float(saved_pos[1]))
 		elif not s.session.is_empty():
 			history_session = int(s.session.session); append_npc(s)
 		drawer = ""; debug = false
