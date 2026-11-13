@@ -2,6 +2,7 @@ extends RefCounted
 ## Single authoritative command boundary. UI receives copies; all effects and settlement are here.
 const Negotiation = preload("res://domain/negotiation.gd")
 const Terms = preload("res://domain/terms.gd")
+const Fixtures = preload("res://domain/fixtures.gd")
 var _content: Dictionary
 var _state: Dictionary
 var save_path: String
@@ -34,6 +35,7 @@ func reset() -> void:
 	c["ban_until"] = 0
 	c["safety_hold"] = false
 	_state = {"version":1,"day":1,"phase":"morning","gold":120,"customer":c,"items":{str(i.instance):i},"selected":i.instance,"session":{},"serial":0,"events":[],"scheduled":[],"receipts":[],"visited":false,"return_note":"","reservation":{},"revision":0}
+	_state["fixtures"] = Fixtures.defaults()
 	for extra in _content.get("extra_items",[]):
 		_state.items[str(extra.instance)] = extra.duplicate(true)
 
@@ -95,9 +97,17 @@ func command(cmd: Dictionary) -> Dictionary:
 		"select":
 			if active or not s.items.has(cmd.get("item","")): return fail("Cannot select item")
 			s.selected = cmd.item
+		"move_fixture":
+			if active: return fail("Finish the encounter before moving furniture")
+			var fixture: String = str(cmd.get("fixture",""))
+			var socket: String = str(cmd.get("socket",""))
+			if not Fixtures.can_place(s.fixtures,fixture,socket): return fail("Placement socket unavailable")
+			s.fixtures[fixture] = socket
+			log_event(s,"fixture_moved",{"fixture":fixture,"socket":socket})
 		"move":
 			var loc: String = cmd.get("location", "")
 			if active or i.owner != "shop" or not valid_location(loc) or not s.reservation.is_empty(): return fail("Cannot move item now")
+			if not Fixtures.slot_allowed(i,loc): return fail("This merchandise needs a compatible display")
 			for other in s.items.values():
 				if other.instance != i.instance and other.owner == "shop" and other.location == loc: return fail("Slot occupied")
 			i.location = loc
@@ -206,6 +216,7 @@ static func valid_location(loc: String) -> bool:
 func valid_state(s: Dictionary) -> bool:
 	for key in ["version","day","phase","gold","customer","items","selected","session","reservation","serial","events","scheduled","receipts","visited","return_note","revision"]:
 		if not s.has(key): return false
+	if not s.get("fixtures") is Dictionary or not Fixtures.valid(s.fixtures): return false
 	if s.version != 1 or not s.customer is Dictionary or not s.items is Dictionary or not s.session is Dictionary or not s.reservation is Dictionary: return false
 	if not s.events is Array or not s.scheduled is Array or not s.receipts is Array: return false
 	if typeof(s.serial)!=TYPE_INT or typeof(s.revision)!=TYPE_INT or s.serial<0 or s.revision<0: return false
@@ -226,7 +237,7 @@ func valid_state(s: Dictionary) -> bool:
 		var obj: Variant = s.items[key]
 		if not obj is Dictionary or not obj.has("instance") or obj.instance != key or not obj.has("owner") or not obj.has("location"): return false
 		if obj.owner == "shop":
-			if not valid_location(str(obj.location)) or occupied.has(obj.location): return false
+			if not valid_location(str(obj.location)) or occupied.has(obj.location) or not Fixtures.slot_allowed(obj,str(obj.location)): return false
 			occupied[obj.location] = true
 		elif obj.owner != s.customer.id or obj.location != "customer": return false
 	for k in _content.customer:
@@ -273,6 +284,29 @@ func load_save() -> Dictionary:
 	for path in [save_path,save_path+".bak"]:
 		if not FileAccess.file_exists(path): continue
 		var parsed: Variant = parse_save(FileAccess.get_file_as_string(path))
+		if parsed is Dictionary:
+			# Compatible legacy saves: add missing layout and new unique test stock once.
+			if not parsed.has("fixtures"): parsed["fixtures"] = Fixtures.defaults()
+			if parsed.get("items") is Dictionary:
+				var original: String = str(_content.item.instance)
+				if parsed.items.has(original) and parsed.items[original] is Dictionary and _content.item.has("display_kind") and not parsed.items[original].has("display_kind"):
+					parsed.items[original]["display_kind"] = _content.item.display_kind
+					if parsed.items[original].get("owner") == "shop" and not Fixtures.slot_allowed(parsed.items[original],str(parsed.items[original].get("location",""))):
+						# Legacy Gate C had no rack type. Retain the item and relocate it safely.
+						for idx in range(2):
+							var loc := "shelf:%d" % idx
+							var occupied := false
+							for obj in parsed.items.values():
+								if obj is Dictionary and obj.get("owner") == "shop" and obj.get("location") == loc: occupied = true
+							if not occupied:
+								parsed.items[original].location = loc
+								break
+				for extra in _content.get("extra_items",[]):
+					if not parsed.items.has(extra.instance):
+						var free := true
+						for obj in parsed.items.values():
+							if obj is Dictionary and obj.get("owner") == "shop" and obj.get("location") == extra.location: free = false
+						if free: parsed.items[extra.instance] = extra.duplicate(true)
 		if parsed is Dictionary and valid_state(parsed):
 			_state = parsed
 			return {"ok":true,"backup":path.ends_with(".bak")}

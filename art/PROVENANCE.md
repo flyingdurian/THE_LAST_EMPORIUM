@@ -1,2 +1,4 @@
 # Temporary composition artwork
 All concept artwork originates from the AI-generated Last Emporium Gate B concepts produced in this conversation, not third-party game artwork. The floor and counter clean plates and owner/customer sprites are cropped and locally processed derivatives of the same concept material. The item is a separate cutout; other pictured props and figures are decorative. Temporary art only, not a final production asset license claim or completed visual benchmark. No external fonts bundled; SystemFont selects platform-installed serif fonts. Final asset provenance and license review required before production distribution.
+
+- `art/d1/empty_floor.jpg`: original AI-generated temporary empty-room composition for D1 (not final production artwork). Fixed architectural props only; interactive furniture and merchandise are independent. JPEG resized from generated source. D1 shelf/rack/sword/shield SVGs are original temporary implementation art.

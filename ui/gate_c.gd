@@ -9,8 +9,11 @@ const OWNER = preload("res://art/merchant_floor.png")
 const CUSTOMER = preload("res://art/customer_floor.png")
 const Ambient = preload("res://ui/ambient.gd")
 const ITEM = preload("res://art/dragonstone.png")
-const SAVE_UI = "user://emporium_gate_c_ui.json"
-var shop = Shop.new()
+const SAVE_UI = "user://emporium_gate_d1_ui.json"
+const Assets = preload("res://ui/d1_assets.gd")
+const Fixtures = preload("res://domain/fixtures.gd")
+var shop = Shop.new(Assets.content())
+var selected_fixture := "shelf"
 var view := "floor"
 var drawer := ""
 var ledger := false
@@ -164,11 +167,12 @@ func refresh() -> void:
 	var s := shop.snapshot(); last_snapshot = s
 	var bg := ColorRect.new(); bg.color = INK; bg.size = root.size; bg.mouse_filter = Control.MOUSE_FILTER_IGNORE; root.add_child(bg)
 	if view == "floor": draw_floor(s)
+	elif view == "stockroom": draw_stockroom(s)
 	else: draw_counter(s)
 	draw_header(s)
 	if drawer == "menu": draw_menu()
 	box(root,Rect2(0,684,1280,36),Color("201817"))
-	label(root,message if message != "" else ("WASD: walk  •  Select a shelf, counter or stockroom  •  Offline prototype" if view == "floor" else "Offline prototype  •  Structured actions, no live AI"),Rect2(20,690,1000,25),15,MUTED)
+	label(root,message if message != "" else ("Select a fixture, counter or stockroom  •  Offline prototype" if view == "floor" else "Offline prototype  •  Structured actions, no live AI"),Rect2(20,690,1000,25),15,MUTED)
 	btn(root,"Debug",Rect2(1175,688,86,27),func(): debug = not debug; refresh())
 	if debug: draw_debug()
 
@@ -178,39 +182,114 @@ func draw_header(s: Dictionary) -> void:
 	label(root,"Day %d" % s.day,Rect2(390,19,90,30),20)
 	label(root,"%dg" % s.gold,Rect2(490,19,150,30),20,GOLD)
 	var status_text := str(s.phase).capitalize()
-	btn(root,"Shop: " + status_text,Rect2(648,10,148,42),func(): open_status())
-	btn(root,"Menu",Rect2(811,10,115,42),func(): open_drawer("menu"))
-	btn(root,"Shop Floor",Rect2(940,10,150,42),func(): switch_view("floor"),false,view == "floor")
-	btn(root,"Counter" + (" •" if waiting(s) else ""),Rect2(1100,10,160,42),func(): switch_view("counter"),false,view == "counter")
+	btn(root,"Shop: " + status_text,Rect2(648,10,136,42),func(): open_status())
+	btn(root,"Menu",Rect2(792,10,76,42),func(): open_drawer("menu"))
+	btn(root,"Shop Floor",Rect2(877,10,119,42),func(): switch_view("floor"),false,view == "floor")
+	btn(root,"Counter" + (" •" if waiting(s) else ""),Rect2(1005,10,113,42),func(): switch_view("counter"),false,view == "counter")
+	btn(root,"Stockroom",Rect2(1127,10,135,42),func(): switch_view("stockroom"),false,view == "stockroom")
 
 func draw_floor(s: Dictionary) -> void:
-	var floor_art := pic(root,FLOOR,Rect2(0,62,1280,622))
-	floor_art.stretch_mode = TextureRect.STRETCH_SCALE
-	# The painted floor contains no baked player or waiting customer. Their visibility follows this shared session.
-	if waiting(s) or active(s): pic(root,CUSTOMER,Rect2(609,270,54,135))
-	owner_sprite = pic(root,OWNER,Rect2(owner_pos-Vector2(33,128),Vector2(66,128)))
-	add_ambient(Rect2(0,62,1280,622))
-	# Contextual hotspots, not domain changes. Scenic concept objects are decorative.
-	btn(root,"Display shelf",Rect2(314,480,168,36),func(): open_drawer("shelf"))
-	btn(root,"Stockroom",Rect2(1055,180,185,42),func(): open_drawer("stock"))
+	# Full empty-room composition; only fixed architecture and counter are painted.
+	var plate := pic(root,Assets.texture(str(Assets.config().floor)),Rect2(0,62,1280,622))
+	plate.stretch_mode = TextureRect.STRETCH_SCALE
+	# Stationary shopkeeper, independent of the background; the counter masks the lower body.
+	var keeper := AtlasTexture.new()
+	keeper.atlas = OWNER
+	keeper.region = Rect2(0,0,OWNER.get_width(),OWNER.get_height()*0.58)
+	pic(root,keeper,Rect2(534,185,64,75))
+	if waiting(s) or active(s): pic(root,CUSTOMER,Rect2(620,253,48,110))
+	for fixture in Fixtures.IDS:
+		draw_fixture(s,fixture)
 	btn(root,"Counter",Rect2(330,245,146,36),func(): open_counter())
+	btn(root,"Stockroom",Rect2(1065,180,170,40),func(): switch_view("stockroom"))
 	if waiting(s):
 		box(root,Rect2(720,77,532,74))
 		label(root,"Customer waiting  •  " + str(s.customer.name),Rect2(735,88,310,30),19,GOLD)
 		btn(root,"Serve customer",Rect2(1045,91,190,46),func(): open_counter(),false,true)
 	elif active(s):
 		btn(root,"Resume conversation",Rect2(1005,91,245,46),func(): switch_view("counter"),false,true)
-	if str(s.item.location).begins_with("shelf:") and s.item.owner == "shop":
-		if active(s): pic(root,ITEM,Rect2(675,205,48,52))
-		else: pic(root,ITEM,Rect2(375,346,78,84))
-	# The right-hand aisle is left clear for later modular fixtures; no expansion gameplay yet.
-	if drawer in ["stock","shelf"]: draw_stock(s)
+	if drawer == "fixture": draw_fixture_panel(s)
 	elif drawer == "status":
 		box(root,Rect2(28,78,300,205))
 		label(root,"Shop hours",Rect2(44,93,260,38),24)
 		btn(root,"Open shop",Rect2(44,140,268,42),func(): command("open"),s.phase != "morning",true)
 		btn(root,"Close shop",Rect2(44,188,268,42),func(): command("close"),s.phase != "open")
 		btn(root,"Next day",Rect2(44,236,268,34),func(): command("next_day"),s.phase != "closed" or s.day != 1)
+func fixture_pos(s: Dictionary, fixture: String) -> Vector2:
+	var coords: Array = Assets.config().sockets[s.fixtures[fixture]]
+	return Vector2(float(coords[0]),float(coords[1]))
+func draw_fixture(s: Dictionary, fixture: String) -> void:
+	var pos := fixture_pos(s,fixture)
+	pic(root,Assets.texture(str(Assets.config()[fixture])),Rect2(pos,Vector2(260,130)))
+	var first := 0 if fixture == "shelf" else 2
+	for i in s.items.values():
+		if i.owner != "shop" or not str(i.location).begins_with("shelf:"): continue
+		if active(s) and i.instance == s.selected: continue
+		var slot := int(str(i.location).get_slice(":",1))
+		if slot < first or slot >= first+2: continue
+		var x := pos.x+34+(slot-first)*108
+		pic(root,Assets.item_texture(i),Rect2(x,pos.y-18 if fixture=="shelf" else pos.y+12,92,90))
+	btn(root,"Display shelf" if fixture=="shelf" else "Equipment rack",Rect2(pos.x+36,pos.y+100,188,31),func(): selected_fixture=fixture; open_drawer("fixture"))
+func draw_fixture_panel(s: Dictionary) -> void:
+	box(root,Rect2(15,372,315,300))
+	label(root,"DISPLAY SHELF" if selected_fixture=="shelf" else "EQUIPMENT RACK",Rect2(30,382,280,35),21,GOLD)
+	var first := 0 if selected_fixture=="shelf" else 2
+	for idx in range(2):
+		var loc := "shelf:%d" % (first+idx)
+		var found := "Empty"
+		for i in s.items.values():
+			if i.owner=="shop" and i.location==loc: found=str(i.name)
+		label(root,"Slot %d: %s" % [idx+1,found],Rect2(30,421+idx*27,280,27),16)
+	label(root,"Move to a placement socket",Rect2(30,483,280,25),16,MUTED)
+	for idx in range(Fixtures.SOCKETS.size()):
+		var socket: String = Fixtures.SOCKETS[idx]
+		btn(root,socket.capitalize(),Rect2(30+(idx%2)*140,511+int(idx/2)*38,135,34),func(): command("move_fixture",{"fixture":selected_fixture,"socket":socket}),active(s) or not Fixtures.can_place(s.fixtures,selected_fixture,socket) or s.fixtures[selected_fixture]==socket)
+	btn(root,"Manage merchandise",Rect2(30,597,280,38),func(): switch_view("stockroom"),false,true)
+	btn(root,"Close",Rect2(30,638,280,26),func(): open_drawer("fixture"))
+func draw_stockroom(s: Dictionary) -> void:
+	box(root,Rect2(20,78,565,590),Color("30221c"))
+	label(root,"STOCKROOM  /  APPRAISAL",Rect2(40,94,520,38),27,GOLD)
+	label(root,"Select your merchandise",Rect2(40,138,520,28),18,MUTED)
+	var row := 0
+	for i in s.items.values():
+		if i.owner != "shop": continue
+		var id: String = str(i.instance)
+		var y := 181+row*104
+		box(root,Rect2(40,y,525,91),Color("493528"))
+		pic(root,Assets.item_texture(i),Rect2(49,y+5,80,80))
+		label(root,str(i.name),Rect2(142,y+9,300,30),22)
+		label(root,str(i.location).replace("shelf:","Display slot ").replace("storage:","Storage slot "),Rect2(142,y+44,300,29),16,MUTED)
+		btn(root,"Selected" if s.selected==id else "Select",Rect2(435,y+25,115,41),func(): command("select",{"item":id}),active(s) or s.selected==id,s.selected==id)
+		row += 1
+	var i: Dictionary = s.item
+	box(root,Rect2(605,78,655,590),Color("392820"))
+	label(root,str(i.name),Rect2(625,95,600,40),29,GOLD)
+	pic(root,Assets.item_texture(i),Rect2(640,145,300,260))
+	label(root,"Condition %d%%\nAsking %dg\n%s" % [i.condition_pct,i.asking,"Appraisal verified" if i.get("appraised",false) else "Not appraised"],Rect2(955,157,285,120),20)
+	var locked: bool = active(s) or i.owner!="shop"
+	make_price(root,Rect2(625,418,180,42),int(i.asking))
+	btn(root,"Set price",Rect2(815,418,180,42),func(): command("price",{"amount":price_value}),locked)
+	btn(root,"Appraise",Rect2(1005,418,235,42),func(): command("appraise"),locked)
+	label(root,"Move to a compatible display slot",Rect2(625,474,600,27),17,MUTED)
+	for idx in range(4):
+		var loc := "shelf:%d" % idx
+		var occupied := false
+		for other in s.items.values():
+			if other.owner=="shop" and other.location==loc: occupied=true
+		btn(root,("Shelf " if idx<2 else "Rack ")+str(idx%2+1),Rect2(625+idx*155,505,145,41),func(): command("move",{"location":loc}),locked or occupied or not Fixtures.slot_allowed(i,loc))
+	btn(root,"Return to storage",Rect2(625,565,300,46),func(): store_selected(),locked or str(i.location).begins_with("storage:"))
+	btn(root,"Inspect at counter",Rect2(935,565,305,46),func(): switch_view("counter"),i.owner!="shop",true)
+func store_selected() -> void:
+	var s := shop.snapshot()
+	for idx in range(8):
+		var loc := "storage:%d" % idx
+		var occupied := false
+		for item in s.items.values():
+			if item.owner=="shop" and item.location==loc: occupied=true
+		if not occupied:
+			command("move",{"location":loc})
+			return
+	message = "Storage is full."; refresh()
 
 func make_price(parent: Control, rect: Rect2, initial: int) -> void:
 	price = SpinBox.new(); price.position = rect.position; price.size = rect.size
@@ -253,17 +332,17 @@ func draw_counter(s: Dictionary) -> void:
 		if waiting(s): btn(root,"Welcome customer",Rect2(22,180,240,45),func(): open_counter(),false,true)
 	var i: Dictionary = s.item
 	# Item anchor is independent of the HUD and ledger; texture fit accommodates large objects.
-	if is_active:
-		item_stage = pic(root,ITEM,Rect2(795,318,270,192))
+	if is_active or i.owner=="shop":
+		item_stage = pic(root,Assets.item_texture(i),Rect2(795,318,270,192))
 		# Match the physical counter plane in the temporary art. Large objects can use the full 470×280 stage.
 		item_stage.stretch_mode = TextureRect.STRETCH_SCALE
 		if str(i.get("stage_size","small")) == "large":
 			item_stage.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 			item_stage.position = Vector2(740,228); item_stage.size = Vector2(470,282)
 		box(root,Rect2(944,78,316,124))
-		pic(root,ITEM,Rect2(955,91,74,91))
+		pic(root,Assets.item_texture(i),Rect2(955,91,74,91))
 		label(root,str(i.name),Rect2(1038,91,207,34),21 if str(i.name).length() > 18 else 24)
-		label(root,"Condition %d%%\nAsking %dg" % [i.condition_pct,n.ask],Rect2(1038,130,207,55),17,GOLD)
+		label(root,"Condition %d%%\nAsking %dg" % [i.condition_pct,n.get("ask",i.asking)],Rect2(1038,130,207,55),17,GOLD)
 	btn(root,"Hide ledger" if ledger else "View ledger",Rect2(1065,213,194,40),func(): ledger = not ledger; refresh())
 	if ledger: draw_ledger()
 	box(root,Rect2(22,518,858,159),Color("30221c"))
@@ -350,7 +429,7 @@ func load_game() -> void:
 		var s := shop.snapshot(); var ui: Variant = Shop.parse_save(FileAccess.get_file_as_string(ui_save_path)) if FileAccess.file_exists(ui_save_path) else null
 		view = "counter" if active(s) else "floor"; ledger = false; history=[]; history_session=-1
 		if ui is Dictionary and int(ui.get("revision",-1)) == int(s.revision):
-			view = "counter" if ui.get("view","") == "counter" else "floor"; ledger = bool(ui.get("ledger",false)); history = ui.get("history",[]); history_session = int(ui.get("history_session",-1)); price_value = int(ui.get("price",650))
+			view = str(ui.get("view","floor")) if ui.get("view","") in ["floor","counter","stockroom"] else "floor"; ledger = bool(ui.get("ledger",false)); history = ui.get("history",[]); history_session = int(ui.get("history_session",-1)); price_value = int(ui.get("price",650))
 			var saved_pos: Array = ui.get("owner_pos",[650,642])
 			if saved_pos.size() == 2: owner_pos = Vector2(float(saved_pos[0]),float(saved_pos[1]))
 		elif not s.session.is_empty():
@@ -363,26 +442,3 @@ func add_ambient(rect: Rect2) -> void:
 	a.position = rect.position; a.size = rect.size; a.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(a)
 
-func _process(delta: float) -> void:
-	if view != "floor" or drawer != "" or debug or not is_instance_valid(owner_sprite): return
-	var dir := Vector2.ZERO
-	if Input.is_physical_key_pressed(KEY_A): dir.x -= 1
-	if Input.is_physical_key_pressed(KEY_D): dir.x += 1
-	if Input.is_physical_key_pressed(KEY_W): dir.y -= 1
-	if Input.is_physical_key_pressed(KEY_S): dir.y += 1
-	if get_viewport().gui_get_focus_owner() == null:
-		dir += Input.get_vector("ui_left","ui_right","ui_up","ui_down")
-	if dir == Vector2.ZERO: return
-	var target := owner_pos + dir.normalized() * 175.0 * delta
-	target.x = clampf(target.x,140,1160); target.y = clampf(target.y,350,660)
-	var xtry := Vector2(target.x,owner_pos.y)
-	var ytry := Vector2(owner_pos.x,target.y)
-	if not blocked(xtry): owner_pos.x = target.x
-	if not blocked(ytry): owner_pos.y = target.y
-	owner_sprite.position = owner_pos - Vector2(33,128)
-	owner_sprite.flip_h = dir.x < 0.0 if dir.x != 0.0 else owner_sprite.flip_h
-
-func blocked(point: Vector2) -> bool:
-	for rect in FLOOR_OBSTACLES:
-		if rect.grow(12).has_point(point): return true
-	return false

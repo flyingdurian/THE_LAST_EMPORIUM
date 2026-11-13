@@ -1,0 +1,36 @@
+[
+  {
+    "id": "knights_blade",
+    "instance": "i_sword_001",
+    "name": "Knight's Blade",
+    "base_value": 280,
+    "condition_pct": 90,
+    "demand_pct": 100,
+    "scarcity": 40,
+    "category": "weapon",
+    "asking": 320,
+    "evidence_id": "blade_condition",
+    "evidence_valid": true,
+    "owner": "shop",
+    "location": "storage:1",
+    "display_kind": "rack",
+    "stage_size": "large"
+  },
+  {
+    "id": "ironward_shield",
+    "instance": "i_shield_001",
+    "name": "Ironward Shield",
+    "base_value": 190,
+    "condition_pct": 85,
+    "demand_pct": 100,
+    "scarcity": 30,
+    "category": "equipment",
+    "asking": 220,
+    "evidence_id": "shield_condition",
+    "evidence_valid": true,
+    "owner": "shop",
+    "location": "storage:2",
+    "display_kind": "rack",
+    "stage_size": "large"
+  }
+]
