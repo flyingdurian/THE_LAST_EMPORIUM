@@ -41,7 +41,8 @@
       "role": "Antiquarian",
       "style": "courteous",
       "color": "#87506c",
-      "presentation_motion": 0.8
+      "presentation_motion": 0.8,
+      "small_talk_rapport": 2
     },
     {
       "id": "bram_alder",
@@ -82,7 +83,8 @@
       "role": "Salvager",
       "style": "blunt",
       "color": "#92704a",
-      "presentation_motion": 0.5
+      "presentation_motion": 0.5,
+      "banter_tolerance": 8
     },
     {
       "id": "marla_fen",
@@ -246,7 +248,9 @@
       "role": "Traveling trader",
       "style": "cheerful",
       "color": "#a77943",
-      "presentation_motion": 0.9
+      "presentation_motion": 0.9,
+      "banter_tolerance": 5,
+      "small_talk_rapport": 3
     }
   ],
   "items": [

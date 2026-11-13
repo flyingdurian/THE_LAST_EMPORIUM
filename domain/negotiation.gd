@@ -35,7 +35,7 @@ static func resolve(previous: Dictionary, action: Dictionary, c: Dictionary, ite
 	var s := previous.duplicate(true)
 	var effects: Array = []
 	var kind: String = action.get("type", "")
-	var valid := ["counter","evidence","reassure","patient","flatter","firm","insult","ban_threat","violence_threat","dismiss","end","reject","accept_offer","ban_confirm","small_talk","unsupported_claim"]
+	var valid := ["counter","evidence","reassure","patient","flatter","firm","insult","ban_threat","violence_threat","dismiss","end","reject","accept_offer","ban_confirm","small_talk","banter","unsupported_claim"]
 	if not kind in valid or not s.status in ["negotiating","pending"]:
 		return {"ok":false,"error":"Action unavailable"}
 	if s.final and not kind in ["end","reject","accept_offer"]:
@@ -47,6 +47,7 @@ static func resolve(previous: Dictionary, action: Dictionary, c: Dictionary, ite
 	if kind == "ban_confirm" and (not bool(c.ban_authority) or int(action.get("days",0)) < 1 or int(action.get("days",0)) > 30):
 		return {"ok":false,"error":"Invalid ban"}
 	s.revision += 1
+	s["last_action"] = kind
 	if kind in ["end","reject","ban_confirm","violence_threat"]:
 		if kind == "ban_confirm":
 			effects.append({"kind":"actual_ban","days":int(action.days),"rel":int(p.ban_rel),"trust":int(p.ban_trust)})
@@ -104,7 +105,15 @@ static func resolve(previous: Dictionary, action: Dictionary, c: Dictionary, ite
 			if int(s.ban)>0 and bool(c.ban_authority): s.ban = rnd(float(p.ban)*float(c.ban_sensitivity)/100.0)
 		"small_talk":
 			s.patience -= 5
-			s.rapport = maxi(0,int(s.rapport)-2)
+			var gain: int = int(c.get("small_talk_rapport",0)) if first else -2
+			s.rapport = clampi(int(s.rapport)+gain,0,int(c.rapport_cap))
+		"banter":
+			var tolerance: int = int(c.get("banter_tolerance",0))
+			if first and tolerance>0:
+				s.rapport = mini(int(c.rapport_cap),int(s.rapport)+mini(3,tolerance))
+			else:
+				s.anger += 5 if tolerance>0 else 10
+				s.patience -= 4
 	s.metrics = metrics(s,c,item,p)
 	if s.patience <= 0 or s.anger >= int(p.anger_exit):
 		s.status = "closed"
@@ -142,4 +151,4 @@ static func resolve(previous: Dictionary, action: Dictionary, c: Dictionary, ite
 
 # Only public terms and resolved performance cues cross the future renderer boundary.
 static func public_plan(s: Dictionary) -> Dictionary:
-	return {"speech_act":s.get("speech_act",""),"offer":int(s.get("offer",0)),"expression":s.get("expression","neutral")}
+	return {"speech_act":s.get("speech_act",""),"offer":int(s.get("offer",0)),"expression":s.get("expression","neutral"),"last_action":s.get("last_action","")}

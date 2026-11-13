@@ -13,7 +13,7 @@ static func make_item(book: Dictionary,id: String,key: String,owner: String,loc:
 	i.instance=key; i.owner=owner; i.location=loc; i.appraised=false; i["knowledge"]=0
 	return i
 static func return_line(c: Dictionary,goal: String) -> String:
-	if goal=="complaint": return "The shelves were bare when I last came. Can you keep a little stock for regulars?"
+	if goal=="complaint": return "Could you keep a little stock for regulars? I rely on this shop for herbs."
 	if int(c.get("history_modifier",0))>0: return "I remember your fairness. "+str(c.clue)
 	if int(c.get("history_modifier",0))<0: return "I remember your threat. Let us keep this brief."
 	return "Good to see you again. How has the shop been?"

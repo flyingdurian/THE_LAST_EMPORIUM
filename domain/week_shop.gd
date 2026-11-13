@@ -39,7 +39,7 @@ func storage_slot(s: Dictionary) -> String:
 	return ""
 func visits(s: Dictionary) -> Array:
 	var v: Array=book.visits.get(str(s.day),[]).duplicate(true)
-	if s.upgrades.sign and s.day==4: v.append(["tovin_reed","buy","ember_tonic"])
+	if s.upgrades.sign and s.day==4: v.append(["tovin_reed","buy","star_compass"])
 	return v
 func prepare_visit(s: Dictionary) -> void:
 	s.session={}; s.reservation={}; s.visited=false; s.return_note=""
@@ -134,12 +134,18 @@ func special_act(s: Dictionary, cmd: Dictionary) -> Dictionary:
 		n.revision+=1; n.status="pending"; n.offer=cash; n.speech_act="barter_agreement"; n.expression="relieved"
 		s.reservation={"item":i.instance,"session":n.session,"revision":n.revision,"amount":cash,"terms":terms}
 		return commit(s)
+	if goal=="sell" and k=="inspect":
+		if n.status!="negotiating": return fail("Finish the proposed purchase")
+		i["knowledge"]=2 if s.expertise>0 else 1; i.appraised=true
+		n.revision+=1; n.speech_act="seller_counter"
+		log_event(s,"appraised",{"item":i.instance,"level":i.knowledge}); return commit(s)
 	if goal=="sell" and k in ["counter","accept_offer","evidence","reassure","patient","flatter","firm"]:
 		if n.status!="negotiating": return fail("Confirm or decline")
 		var amount: Variant=a.get("amount",n.offer)
 		if typeof(amount)!=TYPE_INT or amount<1: return fail("Invalid offer")
 		var first: bool=not k in n.seen
 		if first: n.seen.append(k)
+		n["last_action"]=k
 		n.revision+=1; n.patience-=5
 		var floor_price: int=int(n.seller_floor)
 		if first and k in ["patient","reassure","evidence"] and (k!="evidence" or bool(i.get("appraised",false))):
@@ -152,7 +158,7 @@ func special_act(s: Dictionary, cmd: Dictionary) -> Dictionary:
 		else: n.speech_act="seller_counter"; n.expression="thoughtful"
 		log_event(s,"turn",{"action":k,"session":n.session})
 		return commit(s)
-	if goal in ["social","complaint"] and k not in ["end","reject","dismiss","ban_confirm","violence_threat","insult","small_talk","reassure","flatter","firm","ban_threat","patient"]:
+	if goal in ["social","complaint"] and k not in ["end","reject","dismiss","ban_confirm","violence_threat","insult","small_talk","reassure","flatter","firm","ban_threat","patient","banter"]:
 		return fail("This visit is not a trade")
 	# Social behavior shares the generic reducer, including threats, patience and one-time effects.
 	a.erase("amount"); a["verified"]=false
@@ -234,7 +240,7 @@ func advance(s: Dictionary) -> Dictionary:
 			var key: String="exp_"+str(s.expedition.id)+"_"+str(id)
 			var loc:=storage_slot(s)
 			var item:=WeekData.make_item(book,str(id),key,"shop",loc if loc!="" else "delivery")
-			item.acquisition_cost=int(book.expedition.cost)/loot.size()
+			item.acquisition_cost=int(int(book.expedition.cost)/loot.size())
 			s.items[key]=item
 		if s.expedition.evidence: s.rumor={"state":"known","truth":"Quarry fragments are authentic; repair demand is rising.","knower":"bram_alder","origin":s.expedition.id}
 		log_event(s,"expedition_returned",{"id":s.expedition.id,"injury":s.expedition.injury})

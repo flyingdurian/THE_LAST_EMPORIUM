@@ -1,2 +1,2 @@
-# The Last Emporium — Gate D2
-Godot 4.3, offline visual benchmark candidate. Import project.godot F5. Shop Floor/Counter/Stockroom. Inspect at counter does not start a deal. Open and serve customer, use authored response actions, review and confirm. Menu has text speed, sound volume, save/load; SFX toggle in header. See HANDOFF.md and docs/ASSET_REPLACEMENT_GUIDE.md. Run tests/run_all.sh. No live AI yet.
+# The Last Emporium — Merchant's Week (Gate E)
+Godot 4.3. Import project.godot, F5. Offline only, no API. Shop Floor / Counter / Stockroom tabs; Merchant journal on floor for expedition, upgrades and debt; shop-status button opens/closes; next visitor appears after an encounter; closing ledger advances day. See HANDOFF.md for five-day route. Existing D2 scene remains ui/GateC.tscn. Run GODOT=/path/to/godot bash tests/run_all.sh. Windows export in successful CI artifact.

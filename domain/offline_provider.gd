@@ -13,6 +13,11 @@ static func render(plan: Dictionary, context: Dictionary) -> String:
 		"barter_agreement": line="My trade item and %dg. That suits me."%amount
 		_: line=Speech.render(plan)
 	var style: String=context.get("style","courteous")
+	if plan.get("last_action","")=="small_talk" and act in ["counter","claim_limit","social"]:
+		var personal: String={"courteous":"My family keeps me busy.","blunt":"Work, meals, sleep. Same as ever.","practical":"My herb garden is doing well.","formal":"My duties leave little spare time.","dry":"I prefer not to discuss my affairs.","cheerful":"The road has been kind to me."}.get(style,"The town keeps me occupied.")
+		return personal+" Now, about our business. "+line
+	if plan.get("last_action","")=="banter" and act in ["counter","claim_limit","social"]:
+		return ("Ha! Fair jab." if style=="blunt" else "I see. Let us stay civil.")+" "+line
 	if act in ["opening","counter","claim_limit","agreement"]:
 		match style:
 			"blunt": line="Straight to business. "+line

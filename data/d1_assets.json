@@ -250,5 +250,47 @@
       175,
       25
     ]
+  },
+  "week_customers": {
+    "bram_alder": {
+      "floor": "res://art/week/bram_alder_floor.svg",
+      "portraits": {
+        "neutral": "res://art/week/bram_alder_neutral.svg",
+        "pleased": "res://art/week/bram_alder_pleased.svg",
+        "offended": "res://art/week/bram_alder_offended.svg"
+      }
+    },
+    "marla_fen": {
+      "floor": "res://art/week/marla_fen_floor.svg",
+      "portraits": {
+        "neutral": "res://art/week/marla_fen_neutral.svg",
+        "pleased": "res://art/week/marla_fen_pleased.svg",
+        "offended": "res://art/week/marla_fen_offended.svg"
+      }
+    },
+    "ser_caldus": {
+      "floor": "res://art/week/ser_caldus_floor.svg",
+      "portraits": {
+        "neutral": "res://art/week/ser_caldus_neutral.svg",
+        "pleased": "res://art/week/ser_caldus_pleased.svg",
+        "offended": "res://art/week/ser_caldus_offended.svg"
+      }
+    },
+    "nyx_veil": {
+      "floor": "res://art/week/nyx_veil_floor.svg",
+      "portraits": {
+        "neutral": "res://art/week/nyx_veil_neutral.svg",
+        "pleased": "res://art/week/nyx_veil_pleased.svg",
+        "offended": "res://art/week/nyx_veil_offended.svg"
+      }
+    },
+    "tovin_reed": {
+      "floor": "res://art/week/tovin_reed_floor.svg",
+      "portraits": {
+        "neutral": "res://art/week/tovin_reed_neutral.svg",
+        "pleased": "res://art/week/tovin_reed_pleased.svg",
+        "offended": "res://art/week/tovin_reed_offended.svg"
+      }
+    }
   }
 }

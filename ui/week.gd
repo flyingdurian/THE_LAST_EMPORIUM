@@ -13,10 +13,10 @@ func social_present(_s: Dictionary) -> bool:
 	return false
 func portrait_texture(c: Dictionary,key: String) -> Texture2D:
 	if c.id=="vessa_rook": return Assets.texture(str(Assets.config().portraits[key]))
-	return Assets.texture("res://art/week/%s_%s.svg"%[c.id,key])
+	return Assets.texture(str(Assets.config().week_customers[c.id].portraits[key]))
 func floor_texture(c: Dictionary) -> Texture2D:
 	if c.id=="vessa_rook": return Assets.texture(str(Assets.config().customer_floor))
-	return Assets.texture("res://art/week/%s_floor.svg"%c.id)
+	return Assets.texture(str(Assets.config().week_customers[c.id].floor))
 func provider_line(s: Dictionary) -> String:
 	return Provider.render(Negotiation.public_plan(s.session),{"style":s.customer.get("style","courteous"),"note":s.return_note if s.return_note!="" else "A little conversation is welcome. Let us return to business."})
 func append_npc(s: Dictionary) -> void:
@@ -42,10 +42,11 @@ func draw_responses(s: Dictionary) -> void:
 	var social: bool=s.visit_goal in ["social","complaint"]
 	make_price(root,Rect2(38,224,175,40),maxi(1,int(s.session.ask)))
 	btn(root,"Counteroffer",Rect2(223,224,270,40),func(): act("counter","I propose %dg."%price_value,true),social)
-	var rows: Array=[["evidence","Show appraisal",true],["reassure","Acknowledge / reassure",not social],["patient","Bargain patiently",not social],["flatter","Flatter",not social],["small_talk","Personal conversation",false],["firm","Stand firm",false],["ban_threat","Threaten a ban",false],["insult","Blunt remark / insult",false],["dismiss","Dismiss customer",false],["violence_threat","Threaten violence",false],["end","End conversation",false]]
+	var rows: Array=[["evidence","Show appraisal",true],["reassure","Acknowledge / reassure",not social],["patient","Bargain patiently",not social],["flatter","Flatter",not social],["small_talk","Personal conversation",false],["firm","Stand firm",false],["ban_threat","Threaten a ban",false],["insult","Insult",false],["dismiss","Dismiss customer",false],["violence_threat","Threaten violence",false],["end","End conversation",false]]
 	if s.visit_goal=="barter": rows[0]=["barter","Offer item + gold trade",false]
-	if s.rumor.get("state","")=="known" and s.customer.id==s.rumor.get("knower",""): rows[11-1]=["ask_rumor","Ask about the quarry",false]
-	else: rows.append(["ban_confirm","Ban 30 days…",false])
+	if s.visit_goal=="sell": rows[0]=["inspect","Inspect offered goods",false]
+	if s.rumor.get("state","")=="known" and s.customer.id==s.rumor.get("knower",""): rows.append(["ask_rumor","Ask about the quarry",false])
+	else: rows.append(["banter","Blunt banter",false])
 	for idx in range(rows.size()):
 		var row: Array=rows[idx]; var kind: String=row[0]; var caption: String=row[1]; var priced: bool=row[2]
 		btn(root,caption,Rect2(38+(idx%2)*230,272+int(idx/2)*37,220,34),func(): choose_response(kind,caption,priced),social and kind=="evidence")
@@ -106,9 +107,9 @@ func draw_journal(s: Dictionary) -> void:
 	box(root,Rect2(22,80,550,530),Color("30221c"))
 	label(root,"MERCHANT JOURNAL",Rect2(40,94,500,40),26,GOLD)
 	var ex: Dictionary=s.expedition
-	var report: String="Hire Bram for the Old Quarry • 90g • returns in 2 days."
+	var report: String="Hire Iona for the Old Quarry • 90g • returns in 2 days."
 	if not ex.is_empty():
-		report="Bram is away until Day %d."%ex.due if ex.state=="away" else ("Bram returned injured; one fragment recovered." if ex.injury else "Bram returned with Moon Glass and a Quarry Relic.")
+		report="Iona is away until Day %d."%ex.due if ex.state=="away" else ("Iona returned injured; one fragment recovered." if ex.injury else "Bram returned with Moon Glass and a Quarry Relic.")
 	label(root,report,Rect2(40,143,510,64),19)
 	btn(root,"Dispatch expedition",Rect2(40,211,510,42),func(): command("dispatch"),s.phase!="morning" or not ex.is_empty() or s.day>3,true)
 	btn(root,"Train appraisal • 50g",Rect2(40,265,510,42),func(): command("expertise"),s.phase!="morning" or s.expertise>0)
@@ -200,7 +201,7 @@ func draw_counter(s: Dictionary) -> void:
 		pic(root,Assets.item_texture(i),Rect2(955,91,74,91))
 		label(root,str(i.name),Rect2(1035,88,213,50),19 if str(i.name).length() > 12 else 24)
 		label(root,"Condition " + str(Data.appraisal(i,s.expertise).condition),Rect2(1038,144,207,25),16,GOLD)
-		label(root,"Asking %dg" % n.get("ask",i.asking),Rect2(1038,169,207,25),17,GOLD)
+		label(root,("Seller asks %dg" % n.offer) if s.visit_goal=="sell" and is_active else "Asking %dg" % n.get("ask",i.asking),Rect2(1038,169,207,25),17,GOLD)
 	btn(root,"Hide ledger" if ledger else "View ledger",Rect2(1065,213,194,40),func(): ledger = not ledger; refresh())
 	if ledger: draw_ledger()
 	box(root,Rect2(22,518,858,159),Color("30221c"))
@@ -223,8 +224,44 @@ func draw_counter(s: Dictionary) -> void:
 	label(root,deal_text(s) if is_active else "No active offer",Rect2(912,555,335,43),25,Color("36251c"))
 	var pending: bool = is_active and n.status == "pending"
 	label(root,"Awaiting your confirmation" if pending else ("Customer offer — not yet accepted" if is_active else "Inspection only — no transaction"),Rect2(912,594,335,29),15,Color("79512f"))
-	btn(root,("Confirm buy" if s.visit_goal=="sell" else "Confirm trade") if pending else "Review offer",Rect2(912,628,159,39),func(): review_or_confirm(pending),not is_active or s.visit_goal in ["social","complaint"],true)
+	btn(root,("Confirm buy" if s.visit_goal=="sell" else ("Confirm trade" if s.reservation.has("terms") else "Confirm sale")) if pending else "Review offer",Rect2(912,628,159,39),func(): review_or_confirm(pending),not is_active or s.visit_goal in ["social","complaint"],true)
 	btn(root,"Reject / leave",Rect2(1080,628,166,39),func(): act("reject","No deal."),not is_active)
 	if drawer == "responses" and is_active and n.status == "negotiating": draw_responses(s)
 	if shop.next_waiting(s): btn(root,"Next visitor",Rect2(22,180,240,42),func(): command("next_customer"),false,true)
+
+
+func draw_fixture(s: Dictionary, fixture: String) -> void:
+	var pos := fixture_pos(s,fixture)
+	pic(root,Assets.texture(str(Assets.config()[fixture])),Rect2(pos,Vector2(260,130)))
+	var first := 0 if fixture == "shelf" else 2
+	for i in s.items.values():
+		if i.owner != "shop" or not str(i.location).begins_with("shelf:"): continue
+		if active(s) and s.visit_goal in ["buy","barter"] and i.instance == s.selected: continue
+		var slot := int(str(i.location).get_slice(":",1))
+		if slot < first or slot >= first+2: continue
+		var item_rect := Presentation.display_rect(i,pos,slot-first,1.0)
+		var display := pic(root,Assets.item_texture(i),item_rect)
+		display.name = "Display_" + str(i.instance)
+		floor_items[str(i.instance)] = display
+	btn(root,"Display shelf" if fixture=="shelf" else "Equipment rack",Rect2(pos.x+36,pos.y+100,188,31),func(): selected_fixture=fixture; open_drawer("fixture"))
+
+func draw_counter_fixtures(s: Dictionary) -> void:
+	# Selective authored projections. No unrelated or synthetic shoppers.
+	var config := Assets.config()
+	for fixture in Fixtures.IDS:
+		var socket: String = str(s.fixtures[fixture])
+		var coords: Array = config.counter_sockets[socket]
+		var pos := Vector2(float(coords[0]),float(coords[1]))
+		var scale_factor := float(coords[2])
+		pic(root,Assets.texture(str(config[fixture])),Rect2(pos,Vector2(260,130)*scale_factor))
+		var first := 0 if fixture=="shelf" else 2
+		for item in s.items.values():
+			if item.owner!="shop" or not str(item.location).begins_with("shelf:"): continue
+			# The selected object is represented by the independent stage, not twice in this view.
+			if item.instance==s.selected and ((active(s) and s.visit_goal in ["buy","barter"]) or not active(s)): continue
+			var slot := int(str(item.location).get_slice(":",1))
+			if slot<first or slot>=first+2: continue
+			var t := pic(root,Assets.item_texture(item),Presentation.display_rect(item,pos,slot-first,scale_factor))
+			t.name = "Background_" + str(item.instance)
+			counter_items[str(item.instance)] = t
 
