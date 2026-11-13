@@ -189,16 +189,14 @@ func draw_header(s: Dictionary) -> void:
 	btn(root,"Stockroom",Rect2(1127,10,135,42),func(): switch_view("stockroom"),false,view == "stockroom")
 
 func draw_floor(s: Dictionary) -> void:
-	# Only architecture and the fixed counter are borrowed from the approved plate.
-	# The lower foreground is composed from independent fixtures and items.
-	var atlas := AtlasTexture.new()
-	var plate: Texture2D = Assets.texture(str(Assets.config().floor))
-	atlas.atlas = plate
-	atlas.region = Rect2(0,0,plate.get_width(),plate.get_height()*0.49)
-	var architecture := pic(root,atlas,Rect2(0,62,1280,305))
-	architecture.stretch_mode = TextureRect.STRETCH_SCALE
-	var boards := pic(root,Assets.texture(str(Assets.config().boards)),Rect2(0,367,1280,317))
-	boards.stretch_mode = TextureRect.STRETCH_SCALE
+	# Full empty-room composition; only fixed architecture and counter are painted.
+	var plate := pic(root,Assets.texture(str(Assets.config().floor)),Rect2(0,62,1280,622))
+	plate.stretch_mode = TextureRect.STRETCH_SCALE
+	# Stationary shopkeeper, independent of the background; the counter masks the lower body.
+	var keeper := AtlasTexture.new()
+	keeper.atlas = OWNER
+	keeper.region = Rect2(0,0,OWNER.get_width(),OWNER.get_height()*0.58)
+	pic(root,keeper,Rect2(534,185,64,75))
 	if waiting(s) or active(s): pic(root,CUSTOMER,Rect2(620,253,48,110))
 	for fixture in Fixtures.IDS:
 		draw_fixture(s,fixture)

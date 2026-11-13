@@ -1,6 +1,5 @@
 {
-  "floor": "res://art/floor_clean.jpg",
-  "boards": "res://art/d1/floorboards.svg",
+  "floor": "res://art/d1/empty_floor.jpg",
   "shelf": "res://art/d1/shelf.svg",
   "rack": "res://art/d1/rack.svg",
   "items": {
