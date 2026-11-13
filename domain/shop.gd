@@ -216,7 +216,7 @@ static func valid_location(loc: String) -> bool:
 func valid_state(s: Dictionary) -> bool:
 	for key in ["version","day","phase","gold","customer","items","selected","session","reservation","serial","events","scheduled","receipts","visited","return_note","revision"]:
 		if not s.has(key): return false
-	if not Fixtures.valid(s.get("fixtures",{})): return false
+	if not s.get("fixtures") is Dictionary or not Fixtures.valid(s.fixtures): return false
 	if s.version != 1 or not s.customer is Dictionary or not s.items is Dictionary or not s.session is Dictionary or not s.reservation is Dictionary: return false
 	if not s.events is Array or not s.scheduled is Array or not s.receipts is Array: return false
 	if typeof(s.serial)!=TYPE_INT or typeof(s.revision)!=TYPE_INT or s.serial<0 or s.revision<0: return false
@@ -288,6 +288,19 @@ func load_save() -> Dictionary:
 			# Compatible legacy saves: add missing layout and new unique test stock once.
 			if not parsed.has("fixtures"): parsed["fixtures"] = Fixtures.defaults()
 			if parsed.get("items") is Dictionary:
+				var original: String = str(_content.item.instance)
+				if parsed.items.has(original) and parsed.items[original] is Dictionary and _content.item.has("display_kind") and not parsed.items[original].has("display_kind"):
+					parsed.items[original]["display_kind"] = _content.item.display_kind
+					if parsed.items[original].get("owner") == "shop" and not Fixtures.slot_allowed(parsed.items[original],str(parsed.items[original].get("location",""))):
+						# Legacy Gate C had no rack type. Retain the item and relocate it safely.
+						for idx in range(2):
+							var loc := "shelf:%d" % idx
+							var occupied := false
+							for obj in parsed.items.values():
+								if obj is Dictionary and obj.get("owner") == "shop" and obj.get("location") == loc: occupied = true
+							if not occupied:
+								parsed.items[original].location = loc
+								break
 				for extra in _content.get("extra_items",[]):
 					if not parsed.items.has(extra.instance):
 						var free := true

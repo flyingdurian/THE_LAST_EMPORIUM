@@ -192,8 +192,9 @@ func draw_floor(s: Dictionary) -> void:
 	# Only architecture and the fixed counter are borrowed from the approved plate.
 	# The lower foreground is composed from independent fixtures and items.
 	var atlas := AtlasTexture.new()
-	atlas.atlas = FLOOR
-	atlas.region = Rect2(0,0,FLOOR.get_width(),FLOOR.get_height()*0.49)
+	var plate: Texture2D = Assets.texture(str(Assets.config().floor))
+	atlas.atlas = plate
+	atlas.region = Rect2(0,0,plate.get_width(),plate.get_height()*0.49)
 	var architecture := pic(root,atlas,Rect2(0,62,1280,305))
 	architecture.stretch_mode = TextureRect.STRETCH_SCALE
 	var boards := pic(root,Assets.texture(str(Assets.config().boards)),Rect2(0,367,1280,317))
@@ -267,7 +268,7 @@ func draw_stockroom(s: Dictionary) -> void:
 	label(root,str(i.name),Rect2(625,95,600,40),29,GOLD)
 	pic(root,Assets.item_texture(i),Rect2(640,145,300,260))
 	label(root,"Condition %d%%\nAsking %dg\n%s" % [i.condition_pct,i.asking,"Appraisal verified" if i.get("appraised",false) else "Not appraised"],Rect2(955,157,285,120),20)
-	var locked := active(s) or i.owner!="shop"
+	var locked: bool = active(s) or i.owner!="shop"
 	make_price(root,Rect2(625,418,180,42),int(i.asking))
 	btn(root,"Set price",Rect2(815,418,180,42),func(): command("price",{"amount":price_value}),locked)
 	btn(root,"Appraise",Rect2(1005,418,235,42),func(): command("appraise"),locked)
