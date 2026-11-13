@@ -12,6 +12,8 @@ const Assets = preload("res://ui/d1_assets.gd")
 const Fixtures = preload("res://domain/fixtures.gd")
 var shop = Shop.new(Assets.content())
 var selected_fixture := "shelf"
+var audio_service: Node
+const AudioService = preload("res://audio/manager.gd")
 var portrait: TextureRect
 var dialogue_label: Label
 var dialogue_tween: Tween
@@ -51,6 +53,9 @@ const GREEN = Color("355546")
 
 func _ready() -> void:
 	get_window().min_size = Vector2i(960,540)
+	audio_service = get_tree().root.get_node_or_null("EmporiumAudio")
+	if audio_service == null:
+		audio_service = AudioService.new(); add_child(audio_service)
 	heading_font = SystemFont.new(); heading_font.font_names = PackedStringArray(["Georgia","DejaVu Serif","Noto Serif"]); heading_font.font_weight = 700
 	conversation_font = SystemFont.new(); conversation_font.font_names = PackedStringArray(["Georgia","DejaVu Serif","Noto Serif"])
 	var prefs := ConfigFile.new()
@@ -91,7 +96,7 @@ func btn(parent: Control, text: String, rect: Rect2, fn: Callable, disabled: boo
 		if mode == "focus": sb.bg_color = Color(0,0,0,0)
 		sb.border_color = GOLD; sb.set_border_width_all(1); sb.set_corner_radius_all(5)
 		b.add_theme_stylebox_override(mode,sb)
-	b.pressed.connect(func(): EmporiumAudio.cue("click"); fn.call()); parent.add_child(b)
+	b.pressed.connect(func(): audio_service.cue("click"); fn.call()); parent.add_child(b)
 	return b
 
 func pic(parent: Control, texture: Texture2D, rect: Rect2, cover: bool = false) -> TextureRect:
@@ -138,14 +143,14 @@ func command(kind: String, args: Dictionary = {}, player_line: String = "") -> v
 	message = ""
 	var after := shop.snapshot()
 	if kind == "visit":
-		portrait_event = "enter"; reveal_next = true; EmporiumAudio.cue("arrival")
+		portrait_event = "enter"; reveal_next = true; audio_service.cue("arrival")
 	elif kind in ["act","confirm"]:
 		reveal_next = true
 		if active(before) and not active(after): portrait_event = "exit"
 		elif before.session.get("expression","") != after.session.get("expression",""): portrait_event = "reaction"
 		if int(after.gold) > int(before.gold):
-			gold_feedback = int(after.gold)-int(before.gold); EmporiumAudio.cue("sale")
-		elif after.session.get("expression","") in ["offended","fearful","frightened","distressed"]: EmporiumAudio.cue("tension")
+			gold_feedback = int(after.gold)-int(before.gold); audio_service.cue("sale")
+		elif after.session.get("expression","") in ["offended","fearful","frightened","distressed"]: audio_service.cue("tension")
 	if kind == "visit" and not after.session.is_empty() and (before.session.is_empty() or before.session.session != after.session.session):
 		history = []; history_session = int(after.session.session)
 		append_npc(after)
@@ -215,7 +220,7 @@ func draw_header(s: Dictionary) -> void:
 	label(root,"THE LAST EMPORIUM",Rect2(18,14,350,40),27)
 	label(root,"Day %d" % s.day,Rect2(390,19,90,30),20)
 	label(root,"%dg" % s.gold,Rect2(484,19,104,30),20,GOLD)
-	btn(root,"SFX off" if EmporiumAudio.muted else "SFX on",Rect2(588,17,55,28),func(): EmporiumAudio.set_muted(not EmporiumAudio.muted); refresh())
+	btn(root,"SFX off" if audio_service.muted else "SFX on",Rect2(588,17,55,28),func(): audio_service.set_muted(not audio_service.muted); refresh())
 	var status_text := str(s.phase).capitalize()
 	btn(root,"Shop: " + status_text,Rect2(648,10,136,42),func(): open_status())
 	btn(root,"Menu",Rect2(792,10,76,42),func(): open_drawer("menu"))
@@ -464,8 +469,8 @@ func draw_menu() -> void:
 	btn(root,"Load game",Rect2(821,173,217,43),func(): load_game())
 	btn(root,"Text: " + ["Instant","Normal","Slow"][dialogue_speed],Rect2(821,224,217,43),func(): set_dialogue_speed((dialogue_speed+1)%3))
 	label(root,"Effects volume",Rect2(821,273,217,25),16,MUTED)
-	var volume := HSlider.new(); volume.min_value=0; volume.max_value=1; volume.step=0.05; volume.value=EmporiumAudio.volume; volume.position=Vector2(821,309); volume.size=Vector2(217,30); root.add_child(volume)
-	volume.value_changed.connect(func(v: float): EmporiumAudio.set_volume(v))
+	var volume := HSlider.new(); volume.min_value=0; volume.max_value=1; volume.step=0.05; volume.value=audio_service.volume; volume.position=Vector2(821,309); volume.size=Vector2(217,30); root.add_child(volume)
+	volume.value_changed.connect(func(v: float): audio_service.set_volume(v))
 
 func draw_debug() -> void:
 	box(root,Rect2(20,70,315,178),Color("241d1b"))
@@ -549,7 +554,7 @@ func start_dialogue(line: String) -> void:
 	dialogue_tween.tween_property(dialogue_label,"visible_characters",line.length(),maxf(0.12,duration))
 	dialogue_tween.tween_callback(func():
 		if is_instance_valid(dialogue_label): dialogue_label.visible_characters=-1)
-	EmporiumAudio.cue("text")
+	audio_service.cue("text")
 
 func skip_dialogue() -> void:
 	if dialogue_tween and dialogue_tween.is_valid(): dialogue_tween.kill()
