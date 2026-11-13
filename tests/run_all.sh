@@ -16,5 +16,6 @@ run regression --script res://tests/run.gd
 grep -E 'RESULT: [0-9]+ passed, 0 failed' .artifacts/logs/regression.txt
 run main_smoke --quit-after 10
 run presentation --script res://tests/presentation.gd
+run d1 --script res://tests/d1.gd
 run resolution_smoke res://ui/ResolutionCompare.tscn --quit-after 10
 printf '\nRuntime gate passed. Manual playtest still required.\n'

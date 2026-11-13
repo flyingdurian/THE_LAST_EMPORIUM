@@ -1,2 +1,2 @@
-# The Last Emporium
-Gate C candidate 0.1 — Godot 4, offline. Import project.godot and F5. See HANDOFF.md for exact scope, controls, tests and known limitations. The original graybox scene remains at ui/Main.tscn. Run tests/run_all.sh with Godot 4. Temporary art provenance: art/PROVENANCE.md.
+# The Last Emporium — Gate D1 candidate
+Godot 4.3. Import project.godot and F5. Navigate Shop Floor / Counter / Stockroom using the header. Select merchandise in stockroom, appraise and display in compatible slots. Click a fixture and choose an authored free socket. Open the shop and serve the actual waiting customer. Offline actions only. See HANDOFF.md and docs/ASSET_REPLACEMENT_GUIDE.md. Run tests/run_all.sh with GODOT set to Godot 4.3. D2 art benchmark remains pending.

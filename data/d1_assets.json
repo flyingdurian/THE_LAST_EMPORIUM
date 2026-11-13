@@ -1,0 +1,29 @@
+{
+  "floor": "res://art/floor_clean.jpg",
+  "boards": "res://art/d1/floorboards.svg",
+  "shelf": "res://art/d1/shelf.svg",
+  "rack": "res://art/d1/rack.svg",
+  "items": {
+    "dragonstone": "res://art/dragonstone.png",
+    "knights_blade": "res://art/d1/sword.svg",
+    "ironward_shield": "res://art/d1/shield.svg"
+  },
+  "sockets": {
+    "west": [
+      350,
+      374
+    ],
+    "east": [
+      785,
+      374
+    ],
+    "southwest": [
+      350,
+      521
+    ],
+    "southeast": [
+      785,
+      521
+    ]
+  }
+}
