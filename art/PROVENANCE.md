@@ -10,3 +10,6 @@ All concept artwork originates from the AI-generated Last Emporium Gate B concep
 - shelf/rack PNGs: original programmatically painted pixel-style empty fixture art. No inventory baked in. All D2 images are project-only temporary originals, no third-party asset pack.
 
 - Revised D2 fixture PNGs use the original generated counter's wood texture, projected onto independently constructed empty shelves; keeper PNG is isolated from the original concept board, stage shadow is original alpha texture. No painted stock in fixture sprites.
+
+## Gate E temporary assets
+`art/week/*.svg` are original source-drawn character and item illustrations for the development scenario, not approved production art. Vessa and original three merchandise retain D2 generated benchmark assets. No external licenses or third-party characters. Replace via project registry or documented path.

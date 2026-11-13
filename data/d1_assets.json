@@ -5,7 +5,14 @@
   "items": {
     "dragonstone": "res://art/dragonstone.png",
     "knights_blade": "res://art/d2/sword.png",
-    "ironward_shield": "res://art/d2/shield.png"
+    "ironward_shield": "res://art/d2/shield.png",
+    "emberroot": "res://art/week/emberroot.svg",
+    "ember_tonic": "res://art/week/ember_tonic.svg",
+    "silver_locket": "res://art/week/silver_locket.svg",
+    "warding_tome": "res://art/week/warding_tome.svg",
+    "star_compass": "res://art/week/star_compass.svg",
+    "moon_glass": "res://art/week/moon_glass.svg",
+    "quarry_relic": "res://art/week/quarry_relic.svg"
   },
   "sockets": {
     "west": [
@@ -85,6 +92,76 @@
         46,
         13
       ]
+    },
+    "emberroot": {
+      "size": [
+        40,
+        42
+      ],
+      "offset": [
+        56,
+        -17
+      ]
+    },
+    "ember_tonic": {
+      "size": [
+        40,
+        42
+      ],
+      "offset": [
+        56,
+        -17
+      ]
+    },
+    "silver_locket": {
+      "size": [
+        40,
+        42
+      ],
+      "offset": [
+        56,
+        -17
+      ]
+    },
+    "warding_tome": {
+      "size": [
+        40,
+        42
+      ],
+      "offset": [
+        56,
+        -17
+      ]
+    },
+    "star_compass": {
+      "size": [
+        40,
+        42
+      ],
+      "offset": [
+        56,
+        -17
+      ]
+    },
+    "moon_glass": {
+      "size": [
+        40,
+        42
+      ],
+      "offset": [
+        56,
+        -17
+      ]
+    },
+    "quarry_relic": {
+      "size": [
+        40,
+        42
+      ],
+      "offset": [
+        56,
+        -17
+      ]
     }
   },
   "counter_items": {
@@ -110,6 +187,48 @@
       244,
       182,
       216
+    ],
+    "emberroot": [
+      825,
+      316,
+      190,
+      145
+    ],
+    "ember_tonic": [
+      825,
+      316,
+      190,
+      145
+    ],
+    "silver_locket": [
+      825,
+      316,
+      190,
+      145
+    ],
+    "warding_tome": [
+      825,
+      316,
+      190,
+      145
+    ],
+    "star_compass": [
+      825,
+      316,
+      190,
+      145
+    ],
+    "moon_glass": [
+      825,
+      316,
+      190,
+      145
+    ],
+    "quarry_relic": [
+      825,
+      316,
+      190,
+      145
     ]
   },
   "stage_shadows": {
