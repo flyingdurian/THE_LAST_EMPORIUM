@@ -34,7 +34,7 @@ func _initialize() -> void:
 	var c: Dictionary=w.snapshot().profiles.marla_fen
 	check(N.cap(c)==80 and c.reserve==0 and c.claimed==80,"hard cash budget")
 	var base: Dictionary=w.book.profiles[0]
-	var item: Dictionary=Data.definition(w.book,"dragonstone")
+	var item: Dictionary=Data.make_item(w.book,"dragonstone","synthetic_test","shop","shelf:0")
 	var policy: Dictionary=Data.baseline().policy
 	var a: Dictionary=N.resolve(N.start(base,item,policy,1),{"type":"ban_threat"},base,item,policy)
 	var strong: Dictionary=w.snapshot().profiles.ser_caldus
