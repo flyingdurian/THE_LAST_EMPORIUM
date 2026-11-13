@@ -18,7 +18,7 @@ jobs:
       - name: Capture running presentation
         run: |
           mkdir -p .artifacts/logs
-          LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a /tmp/godot/Godot_v4.3-stable_linux.x86_64 --path "$PWD" --script res://tests/capture.gd
+          LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a /tmp/godot/Godot_v4.3-stable_linux.x86_64 --audio-driver Dummy --path "$PWD" --script res://tests/capture.gd
       - name: Upload logs
         if: always()
         uses: actions/upload-artifact@v4

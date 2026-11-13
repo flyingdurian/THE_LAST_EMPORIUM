@@ -3,8 +3,11 @@ extends Control
 const Shop = preload("res://domain/shop.gd")
 const Negotiation = preload("res://domain/negotiation.gd")
 const Speech = preload("res://domain/dialogue.gd")
-const FLOOR = preload("res://art/floor.jpg")
-const COUNTER = preload("res://art/counter.jpg")
+const FLOOR = preload("res://art/floor_clean.jpg")
+const COUNTER = preload("res://art/counter_clean.jpg")
+const OWNER = preload("res://art/merchant_floor.png")
+const CUSTOMER = preload("res://art/customer_floor.png")
+const Ambient = preload("res://ui/ambient.gd")
 const ITEM = preload("res://art/dragonstone.png")
 const SAVE_UI = "user://emporium_gate_c_ui.json"
 var shop = Shop.new()
@@ -22,6 +25,11 @@ var item_stage: TextureRect
 var last_line := ""
 var transition: Tween
 var last_snapshot: Dictionary = {}
+var owner_pos := Vector2(650,642)
+var owner_sprite: TextureRect
+var heading_font: SystemFont
+var conversation_font: SystemFont
+const FLOOR_OBSTACLES := [Rect2(290,380,240,155),Rect2(780,380,225,155),Rect2(210,555,260,150),Rect2(840,555,240,150)]
 const INK = Color("251c19")
 const GOLD = Color("bc945b")
 const PAPER = Color("f2dfbd")
@@ -30,6 +38,8 @@ const GREEN = Color("355546")
 
 func _ready() -> void:
 	get_window().min_size = Vector2i(960,540)
+	heading_font = SystemFont.new(); heading_font.font_names = PackedStringArray(["Georgia","DejaVu Serif","Noto Serif"]); heading_font.font_weight = 700
+	conversation_font = SystemFont.new(); conversation_font.font_names = PackedStringArray(["Georgia","DejaVu Serif","Noto Serif"])
 	refresh()
 
 func box(parent: Control, rect: Rect2, color: Color = INK) -> Panel:
@@ -38,6 +48,7 @@ func box(parent: Control, rect: Rect2, color: Color = INK) -> Panel:
 	var style := StyleBoxFlat.new()
 	style.bg_color = color; style.border_color = GOLD
 	style.set_border_width_all(1); style.set_corner_radius_all(7)
+	style.shadow_color = Color(0.04,0.02,0.01,0.45); style.shadow_size = 3; style.shadow_offset = Vector2(0,2)
 	p.add_theme_stylebox_override("panel",style)
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(p)
@@ -47,6 +58,7 @@ func label(parent: Control, text: String, rect: Rect2, font_size: int = 18, colo
 	var l := Label.new()
 	l.text = text; l.position = rect.position; l.size = rect.size
 	l.add_theme_font_size_override("font_size",font_size)
+	if font_size >= 23 and heading_font != null: l.add_theme_font_override("font",heading_font)
 	l.add_theme_color_override("font_color",color)
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -68,11 +80,13 @@ func btn(parent: Control, text: String, rect: Rect2, fn: Callable, disabled: boo
 	return b
 
 func pic(parent: Control, texture: Texture2D, rect: Rect2, cover: bool = false) -> TextureRect:
-	var t := TextureRect.new(); t.texture = texture; t.position = rect.position; t.size = rect.size
+	var t := TextureRect.new()
+	# Set expansion before the texture and final rectangle; otherwise the native texture size becomes the minimum.
 	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED if cover else TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	t.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	parent.add_child(t); return t
+	t.texture = texture; t.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(t); t.position = rect.position; t.size = rect.size
+	return t
 
 func active(s: Dictionary) -> bool:
 	return not s.session.is_empty() and s.session.status in ["negotiating","pending"]
@@ -140,6 +154,9 @@ func open_counter() -> void:
 	else: switch_view("counter")
 
 func refresh() -> void:
+	if transition and transition.is_valid(): transition.kill()
+	transition = null
+	owner_sprite = null
 	if is_instance_valid(root):
 		remove_child(root); root.queue_free()
 	root = Control.new(); root.size = Vector2(1280,720); add_child(root)
@@ -166,10 +183,14 @@ func draw_header(s: Dictionary) -> void:
 func draw_floor(s: Dictionary) -> void:
 	var floor_art := pic(root,FLOOR,Rect2(0,62,1280,622))
 	floor_art.stretch_mode = TextureRect.STRETCH_SCALE
+	# The painted floor contains no baked player or waiting customer. Their visibility follows this shared session.
+	if waiting(s) or active(s): pic(root,CUSTOMER,Rect2(609,270,54,135))
+	owner_sprite = pic(root,OWNER,Rect2(owner_pos-Vector2(33,128),Vector2(66,128)))
+	add_ambient(Rect2(0,62,1280,622))
 	# Contextual hotspots, not domain changes. Scenic concept objects are decorative.
-	btn(root,"Display shelf",Rect2(307,458,182,42),func(): open_drawer("shelf"))
+	btn(root,"Display shelf",Rect2(314,480,168,36),func(): open_drawer("shelf"))
 	btn(root,"Stockroom",Rect2(1055,180,185,42),func(): open_drawer("stock"))
-	btn(root,"Counter",Rect2(495,240,180,42),func(): open_counter())
+	btn(root,"Counter",Rect2(330,245,146,36),func(): open_counter())
 	if waiting(s):
 		box(root,Rect2(720,77,532,74))
 		label(root,"Customer waiting  •  " + str(s.customer.name),Rect2(735,88,310,30),19,GOLD)
@@ -177,8 +198,9 @@ func draw_floor(s: Dictionary) -> void:
 	elif active(s):
 		btn(root,"Resume conversation",Rect2(1005,91,245,46),func(): switch_view("counter"),false,true)
 	if str(s.item.location).begins_with("shelf:") and s.item.owner == "shop":
-		pic(root,ITEM,Rect2(382,353,76,88))
-	label(root,"Reserved expansion space  •  future shelves and equipment racks",Rect2(585,644,650,26),16,PAPER)
+		if active(s): pic(root,ITEM,Rect2(675,205,48,52))
+		else: pic(root,ITEM,Rect2(375,346,78,84))
+	# The right-hand aisle is left clear for later modular fixtures; no expansion gameplay yet.
 	if drawer in ["stock","shelf"]: draw_stock(s)
 	elif drawer == "status":
 		box(root,Rect2(28,78,300,205))
@@ -215,7 +237,9 @@ func draw_counter(s: Dictionary) -> void:
 	var n: Dictionary = s.session
 	var is_active := active(s)
 	var has_customer: bool = is_active
-	pic(root,COUNTER if has_customer else FLOOR,Rect2(0,62,1280,520),true)
+	var scene_art := pic(root,COUNTER if has_customer else FLOOR,Rect2(0,62,1280,456))
+	scene_art.stretch_mode = TextureRect.STRETCH_SCALE
+	add_ambient(Rect2(0,62,1280,456))
 	if has_customer:
 		box(root,Rect2(22,78,305,78))
 		label(root,str(s.customer.name),Rect2(36,88,275,32),27)
@@ -227,18 +251,23 @@ func draw_counter(s: Dictionary) -> void:
 	var i: Dictionary = s.item
 	# Item anchor is independent of the HUD and ledger; texture fit accommodates large objects.
 	if is_active:
-		item_stage = pic(root,ITEM,Rect2(770,250,345,260))
+		item_stage = pic(root,ITEM,Rect2(795,318,270,192))
+		# Match the physical counter plane in the temporary art. Large objects can use the full 470×280 stage.
+		item_stage.stretch_mode = TextureRect.STRETCH_SCALE
+		if str(i.get("stage_size","small")) == "large":
+			item_stage.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			item_stage.position = Vector2(740,228); item_stage.size = Vector2(470,282)
 		box(root,Rect2(944,78,316,124))
-		pic(root,ITEM,Rect2(956,90,76,78))
-		label(root,str(i.name),Rect2(1038,90,210,31),23)
-		label(root,"Condition %d%%  •  Asking %dg" % [i.condition_pct,i.asking],Rect2(1038,126,207,49),16,GOLD)
-		label(root,"Inspect / terms",Rect2(956,171,285,24),15,MUTED)
+		pic(root,ITEM,Rect2(955,91,74,91))
+		label(root,str(i.name),Rect2(1038,91,207,34),21 if str(i.name).length() > 18 else 24)
+		label(root,"Condition %d%%\nAsking %dg" % [i.condition_pct,i.asking],Rect2(1038,130,207,55),17,GOLD)
 	btn(root,"Hide ledger" if ledger else "View ledger",Rect2(1065,213,194,40),func(): ledger = not ledger; refresh())
 	if ledger: draw_ledger()
 	box(root,Rect2(22,518,858,159),Color("30221c"))
 	label(root,str(s.customer.name) if has_customer else "Counter",Rect2(36,528,820,26),18,GOLD)
 	var line: String = Speech.render(Negotiation.public_plan(n)) if not n.is_empty() else (str(s.return_note) if s.return_note != "" else "No active conversation.")
-	label(root,line,Rect2(36,556,825,57),21)
+	var dialogue_line := label(root,line,Rect2(36,556,825,57),22)
+	if conversation_font != null: dialogue_line.add_theme_font_override("font",conversation_font)
 	var edit := LineEdit.new(); edit.position = Vector2(36,624); edit.size = Vector2(610,40); edit.placeholder_text = "Free text unavailable offline • choose a response"; edit.editable = false; root.add_child(edit)
 	btn(root,"Respond…",Rect2(660,624,202,40),func(): open_drawer("responses"),is_active == false or n.status != "negotiating",true)
 	box(root,Rect2(898,518,362,159),Color("ead5b2"))
@@ -288,17 +317,47 @@ func save_game() -> void:
 	var r: Dictionary = shop.save()
 	if r.ok:
 		var f := FileAccess.open(SAVE_UI,FileAccess.WRITE)
-		if f: f.store_string(JSON.stringify({"revision":shop.snapshot().revision,"view":view,"ledger":ledger,"history":history,"history_session":history_session,"price":price_value})); f.close()
+		if f: f.store_string(JSON.stringify({"revision":shop.snapshot().revision,"view":view,"ledger":ledger,"history":history,"history_session":history_session,"price":price_value,"owner_pos":[owner_pos.x,owner_pos.y]})); f.close()
 	message = "Saved" if r.ok else str(r.get("error","Save failed")); refresh()
 
 func load_game() -> void:
 	var r: Dictionary = shop.load_save()
 	if r.ok:
-		var s := shop.snapshot(); var ui: Variant = JSON.parse_string(FileAccess.get_file_as_string(SAVE_UI))
+		var s := shop.snapshot(); var ui: Variant = Shop.parse_save(FileAccess.get_file_as_string(SAVE_UI)) if FileAccess.file_exists(SAVE_UI) else null
 		view = "counter" if active(s) else "floor"; ledger = false; history=[]; history_session=-1
 		if ui is Dictionary and int(ui.get("revision",-1)) == int(s.revision):
 			view = "counter" if ui.get("view","") == "counter" else "floor"; ledger = bool(ui.get("ledger",false)); history = ui.get("history",[]); history_session = int(ui.get("history_session",-1)); price_value = int(ui.get("price",650))
+			var saved_pos: Array = ui.get("owner_pos",[650,642]); if saved_pos.size() == 2: owner_pos = Vector2(float(saved_pos[0]),float(saved_pos[1]))
 		elif not s.session.is_empty():
 			history_session = int(s.session.session); append_npc(s)
 		drawer = ""; debug = false
 	message = "Loaded" if r.ok else str(r.get("error","Load failed")); refresh()
+
+func add_ambient(rect: Rect2) -> void:
+	var a := Ambient.new()
+	a.position = rect.position; a.size = rect.size; a.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(a)
+
+func _process(delta: float) -> void:
+	if view != "floor" or drawer != "" or debug or not is_instance_valid(owner_sprite): return
+	var dir := Vector2.ZERO
+	if Input.is_physical_key_pressed(KEY_A): dir.x -= 1
+	if Input.is_physical_key_pressed(KEY_D): dir.x += 1
+	if Input.is_physical_key_pressed(KEY_W): dir.y -= 1
+	if Input.is_physical_key_pressed(KEY_S): dir.y += 1
+	if get_viewport().gui_get_focus_owner() == null:
+		dir += Input.get_vector("ui_left","ui_right","ui_up","ui_down")
+	if dir == Vector2.ZERO: return
+	var target := owner_pos + dir.normalized() * 175.0 * delta
+	target.x = clampf(target.x,140,1160); target.y = clampf(target.y,350,660)
+	var xtry := Vector2(target.x,owner_pos.y)
+	var ytry := Vector2(owner_pos.x,target.y)
+	if not blocked(xtry): owner_pos.x = target.x
+	if not blocked(ytry): owner_pos.y = target.y
+	owner_sprite.position = owner_pos - Vector2(33,128)
+	owner_sprite.flip_h = dir.x < 0.0 if dir.x != 0.0 else owner_sprite.flip_h
+
+func blocked(point: Vector2) -> bool:
+	for rect in FLOOR_OBSTACLES:
+		if rect.grow(12).has_point(point): return true
+	return false
