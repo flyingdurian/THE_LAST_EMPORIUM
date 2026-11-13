@@ -275,7 +275,11 @@ func command(cmd: Dictionary) -> Dictionary:
 	if k=="restock":
 		if active: return fail("Finish the encounter")
 		var count:=0
-		for i in s.items.values():
+		var stock: Array=s.items.values()
+		stock.sort_custom(func(a: Dictionary,b: Dictionary):
+			var ai: int=WeekData.rank(book,str(a.id)); var bi: int=WeekData.rank(book,str(b.id))
+			return ai<bi if ai!=bi else str(a.instance)<str(b.instance))
+		for i in stock:
 			if i.owner!="shop" or not str(i.location).begins_with("storage:"): continue
 			for idx in range(4):
 				var loc: String="shelf:%d"%idx
