@@ -237,7 +237,7 @@ func draw_counter(s: Dictionary) -> void:
 	if ledger: draw_ledger()
 	box(root,Rect2(22,518,858,159),Color("30221c"))
 	label(root,str(s.customer.name) if has_customer else "Counter",Rect2(36,528,820,26),18,GOLD)
-	var line := Speech.render(Negotiation.public_plan(n)) if not n.is_empty() else (s.return_note if s.return_note != "" else "No active conversation.")
+	var line: String = Speech.render(Negotiation.public_plan(n)) if not n.is_empty() else (str(s.return_note) if s.return_note != "" else "No active conversation.")
 	label(root,line,Rect2(36,556,825,57),21)
 	var edit := LineEdit.new(); edit.position = Vector2(36,624); edit.size = Vector2(610,40); edit.placeholder_text = "Free text unavailable offline • choose a response"; edit.editable = false; root.add_child(edit)
 	btn(root,"Respond…",Rect2(660,624,202,40),func(): open_drawer("responses"),is_active == false or n.status != "negotiating",true)
