@@ -1,0 +1,2 @@
+# Temporary composition artwork
+`floor.jpg`, `counter.jpg`, `dragonstone.png`, `merchant.png`: crops and local image-processing derivatives of original AI-generated Last Emporium Gate B composition board and counter preview produced in this conversation. Used as temporary project concept material, not third-party game assets. No external game sprites, fonts or artwork included. Floor is a flat concept plate; counter is a single pose with a separated item overlay. Not final production art. The unused merchant crop is a temporary reference only.

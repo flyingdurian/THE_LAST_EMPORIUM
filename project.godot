@@ -1,0 +1,12 @@
+; Godot 4 project, offline graybox integration harness
+config_version=5
+[application]
+config/name="The Last Emporium - Gate C candidate"
+run/main_scene="res://ui/GateC.tscn"
+[display]
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+[rendering]
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
