@@ -220,7 +220,7 @@ func draw_header(s: Dictionary) -> void:
 	label(root,"THE LAST EMPORIUM",Rect2(18,14,350,40),27)
 	label(root,"Day %d" % s.day,Rect2(390,19,90,30),20)
 	label(root,"%dg" % s.gold,Rect2(484,19,104,30),20,GOLD)
-	btn(root,"SFX off" if audio_service.muted else "SFX on",Rect2(588,17,55,28),func(): audio_service.set_muted(not audio_service.muted); refresh())
+	btn(root,"SFX off" if audio_service.muted else "SFX on",Rect2(585,17,61,28),func(): audio_service.set_muted(not audio_service.muted); refresh())
 	var status_text := str(s.phase).capitalize()
 	btn(root,"Shop: " + status_text,Rect2(648,10,136,42),func(): open_status())
 	btn(root,"Menu",Rect2(792,10,76,42),func(): open_drawer("menu"))
@@ -233,10 +233,7 @@ func draw_floor(s: Dictionary) -> void:
 	var plate := pic(root,Assets.texture(str(Assets.config().floor)),Rect2(0,62,1280,622))
 	plate.stretch_mode = TextureRect.STRETCH_SCALE
 	# Stationary shopkeeper, independent of the background; the counter masks the lower body.
-	var keeper := AtlasTexture.new()
-	keeper.atlas = OWNER
-	keeper.region = Rect2(0,0,OWNER.get_width(),OWNER.get_height()*0.58)
-	pic(root,keeper,Rect2(534,185,64,75))
+	pic(root,Assets.texture(str(Assets.config().keeper)),Rect2(532,178,76,84))
 	if waiting(s) or active(s) or social_present(s): pic(root,Assets.texture(str(Assets.config().customer_floor)),Rect2(612,252,44,94))
 	for fixture in Fixtures.IDS:
 		draw_fixture(s,fixture)
@@ -387,14 +384,14 @@ func draw_counter(s: Dictionary) -> void:
 	# Item anchor is independent of the HUD and ledger; texture fit accommodates large objects.
 	if is_active or (i.owner=="shop" and not social_present(s)):
 		var stage := Presentation.stage_rect(i)
-		var mat := ColorRect.new(); mat.color = Color("492a35"); mat.position = Vector2(725,452); mat.size = Vector2(485,47); mat.mouse_filter = Control.MOUSE_FILTER_IGNORE; root.add_child(mat)
+		pic(root,Assets.texture(str(Assets.config().stage_shadow)),Presentation.shadow_rect(i))
 		item_stage = pic(root,Presentation.stage_texture(i),stage)
 		item_stage.name = "StagedItem"
-		if not is_active: label(root,"Preview only  •  ownership unchanged",Rect2(730,492,468,23),14,PAPER)
 		box(root,Rect2(944,78,316,124))
 		pic(root,Assets.item_texture(i),Rect2(955,91,74,91))
-		label(root,str(i.name),Rect2(1038,91,207,34),21 if str(i.name).length() > 18 else 24)
-		label(root,"Condition %d%%\nAsking %dg" % [i.condition_pct,n.get("ask",i.asking)],Rect2(1038,130,207,55),17,GOLD)
+		label(root,str(i.name),Rect2(1035,88,213,50),19 if str(i.name).length() > 12 else 24)
+		label(root,"Condition %d%%" % i.condition_pct,Rect2(1038,144,207,25),16,GOLD)
+		label(root,"Asking %dg" % n.get("ask",i.asking),Rect2(1038,169,207,25),17,GOLD)
 	btn(root,"Hide ledger" if ledger else "View ledger",Rect2(1065,213,194,40),func(): ledger = not ledger; refresh())
 	if ledger: draw_ledger()
 	box(root,Rect2(22,518,858,159),Color("30221c"))
@@ -416,7 +413,7 @@ func draw_counter(s: Dictionary) -> void:
 	var offer := int(n.get("offer",0))
 	label(root,("%dg  •  %s" % [offer,i.name]) if is_active else "No active offer",Rect2(912,555,335,43),25,Color("36251c"))
 	var pending: bool = is_active and n.status == "pending"
-	label(root,"Awaiting your confirmation" if pending else "Customer offer — not yet accepted",Rect2(912,594,335,29),15,Color("79512f"))
+	label(root,"Awaiting your confirmation" if pending else ("Customer offer — not yet accepted" if is_active else "Inspection only — no transaction"),Rect2(912,594,335,29),15,Color("79512f"))
 	btn(root,"Confirm sale" if pending else "Review offer",Rect2(912,628,159,39),func(): review_or_confirm(pending),not is_active,true)
 	btn(root,"Reject / leave",Rect2(1080,628,166,39),func(): act("reject","No deal."),not is_active)
 	if drawer == "responses" and is_active and n.status == "negotiating": draw_responses(s)

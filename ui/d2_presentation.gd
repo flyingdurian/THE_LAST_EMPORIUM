@@ -23,7 +23,12 @@ static func display_rect(item: Dictionary, pos: Vector2, slot: int, factor: floa
 	return Rect2(pos+offset,size)
 static func stage_rect(item: Dictionary) -> Rect2:
 	# The sword lies along the surface; the shield stands against it. The crystal stays compact.
-	return Rect2(740,222,470,282) if item.get("stage_size","small")=="large" else Rect2(795,310,270,192)
+	var cfg: Dictionary = Assets.config()
+	var spec: Array = cfg.stage_rects.get(str(item.id),[810,300,170,150])
+	return Rect2(float(spec[0]),float(spec[1]),float(spec[2]),float(spec[3]))
+static func shadow_rect(item: Dictionary) -> Rect2:
+	var spec: Array = Assets.config().stage_shadows.get(str(item.id),[815,436,170,26])
+	return Rect2(float(spec[0]),float(spec[1]),float(spec[2]),float(spec[3]))
 static func stage_texture(item: Dictionary) -> Texture2D:
 	var path: String = str(Assets.config().get("counter_items",{}).get(str(item.id),""))
 	return Assets.texture(path) if path!="" else Assets.item_texture(item)

@@ -19,7 +19,7 @@ func run() -> void:
 	ui.price_value = 650; ui.act("evidence","Appraisal",true); ui.act("reassure","Fair offer",true)
 	var pending: Dictionary = ui.shop.snapshot()
 	check(pending.session.status == "pending","pending deal")
-	check(ui.item_stage.size == Vector2(270,192),"stage fits intended rectangle")
+	check(ui.item_stage.size == Vector2(200,160) and ui.item_stage.position.y+ui.item_stage.size.y==460,"compact crystal stage on counter")
 	var thumb_found := false
 	for child in ui.root.get_children():
 		if child is TextureRect and child.position == Vector2(955,91):

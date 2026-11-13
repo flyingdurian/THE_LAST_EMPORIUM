@@ -8,3 +8,5 @@ All concept artwork originates from the AI-generated Last Emporium Gate B concep
 - neutral, pleased, offended and vessa_floor PNGs: isolated from original generated Emporium concept art; facial expression composites share a common body and alpha mask. Temporary benchmark, not final commissioned character art.
 - sword, sword_counter, shield PNGs: isolated from original generated merchandise concept, sword reoriented for physical staging.
 - shelf/rack PNGs: original programmatically painted pixel-style empty fixture art. No inventory baked in. All D2 images are project-only temporary originals, no third-party asset pack.
+
+- Revised D2 fixture PNGs use the original generated counter's wood texture, projected onto independently constructed empty shelves; keeper PNG is isolated from the original concept board, stage shadow is original alpha texture. No painted stock in fixture sprites.

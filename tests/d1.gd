@@ -35,7 +35,7 @@ func run() -> void:
 	ui.switch_view("stockroom"); ui.save_game(); ui.switch_view("floor"); ui.load_game()
 	check(ui.view=="stockroom" and ui.shop.snapshot().fixtures.shelf=="southwest" and ui.shop.snapshot().items.size()==3,"layout and room persistence")
 	ui.switch_view("counter")
-	check(ui.item_stage.size==Vector2(470,282),"large item stage")
+	check(ui.item_stage.size==Vector2(182,216) and ui.item_stage.position.y+ui.item_stage.size.y==460,"large shield fits physical counter stage")
 	ui.command("select",{"item":"i_dragon_001"}); ui.command("appraise"); ui.command("open"); ui.command("visit")
 	ui.price_value=650; ui.act("evidence","Appraisal",true); ui.act("reassure","Fair offer",true)
 	before=ui.shop.snapshot()

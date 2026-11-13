@@ -63,7 +63,7 @@
       ],
       "offset": [
         55,
-        -27
+        -22
       ]
     },
     "knights_blade": {
@@ -83,11 +83,53 @@
       ],
       "offset": [
         46,
-        12
+        13
       ]
     }
   },
   "counter_items": {
     "knights_blade": "res://art/d2/sword_counter.png"
+  },
+  "keeper": "res://art/d2/keeper.png",
+  "stage_shadow": "res://art/d2/stage_shadow.png",
+  "stage_rects": {
+    "dragonstone": [
+      822,
+      300,
+      200,
+      160
+    ],
+    "knights_blade": [
+      745,
+      387,
+      450,
+      76
+    ],
+    "ironward_shield": [
+      885,
+      244,
+      182,
+      216
+    ]
+  },
+  "stage_shadows": {
+    "dragonstone": [
+      827,
+      435,
+      190,
+      28
+    ],
+    "knights_blade": [
+      750,
+      432,
+      440,
+      25
+    ],
+    "ironward_shield": [
+      890,
+      438,
+      175,
+      25
+    ]
   }
 }
