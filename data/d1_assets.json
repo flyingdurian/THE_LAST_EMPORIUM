@@ -1,11 +1,11 @@
 {
   "floor": "res://art/d1/empty_floor.jpg",
-  "shelf": "res://art/d1/shelf.svg",
-  "rack": "res://art/d1/rack.svg",
+  "shelf": "res://art/d2/shelf.png",
+  "rack": "res://art/d2/rack.png",
   "items": {
     "dragonstone": "res://art/dragonstone.png",
-    "knights_blade": "res://art/d1/sword.svg",
-    "ironward_shield": "res://art/d1/shield.svg"
+    "knights_blade": "res://art/d2/sword.png",
+    "ironward_shield": "res://art/d2/shield.png"
   },
   "sockets": {
     "west": [
@@ -24,5 +24,70 @@
       785,
       521
     ]
+  },
+  "counter_room": "res://art/d2/counter_room.jpg",
+  "counter_surface": "res://art/d2/counter_surface.jpg",
+  "customer_floor": "res://art/d2/vessa_floor.png",
+  "portraits": {
+    "neutral": "res://art/d2/neutral.png",
+    "pleased": "res://art/d2/pleased.png",
+    "offended": "res://art/d2/offended.png"
+  },
+  "counter_sockets": {
+    "west": [
+      90,
+      238,
+      0.64
+    ],
+    "east": [
+      1030,
+      238,
+      0.64
+    ],
+    "southwest": [
+      98,
+      295,
+      0.75
+    ],
+    "southeast": [
+      1010,
+      295,
+      0.75
+    ]
+  },
+  "display_sizes": {
+    "dragonstone": {
+      "size": [
+        43,
+        48
+      ],
+      "offset": [
+        55,
+        -27
+      ]
+    },
+    "knights_blade": {
+      "size": [
+        82,
+        65
+      ],
+      "offset": [
+        36,
+        19
+      ]
+    },
+    "ironward_shield": {
+      "size": [
+        61,
+        74
+      ],
+      "offset": [
+        46,
+        12
+      ]
+    }
+  },
+  "counter_items": {
+    "knights_blade": "res://art/d2/sword_counter.png"
   }
 }

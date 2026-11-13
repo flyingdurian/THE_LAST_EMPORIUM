@@ -40,5 +40,5 @@ jobs:
       - name: Upload Windows playable
         uses: actions/upload-artifact@v4
         with:
-          name: TheLastEmporium-Windows-GateD1
+          name: TheLastEmporium-Windows-GateD2
           path: build/
