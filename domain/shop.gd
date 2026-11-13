@@ -247,6 +247,11 @@ func valid_state(s: Dictionary) -> bool:
 		if s.session.is_empty() or s.session.status!="pending" or s.reservation.item!=i.instance or i.owner!="shop" or s.reservation.session!=s.session.session or s.reservation.revision!=s.session.revision or s.reservation.amount!=s.session.offer: return false
 	return true
 
+static func parse_save(text: String) -> Variant:
+	var parser := JSON.new()
+	if parser.parse(text) != OK: return null
+	return integers(parser.data)
+
 func save() -> Dictionary:
 	var tmp := save_path+".tmp"
 	var f := FileAccess.open(tmp,FileAccess.WRITE)
@@ -258,7 +263,7 @@ func save() -> Dictionary:
 	var backup := dest+".bak"
 	if FileAccess.file_exists(save_path):
 		# Preserve the last valid primary; do not overwrite backup with corrupt input.
-		var old: Variant = integers(JSON.parse_string(FileAccess.get_file_as_string(save_path)))
+		var old: Variant = parse_save(FileAccess.get_file_as_string(save_path))
 		if old is Dictionary and valid_state(old):
 			if DirAccess.copy_absolute(dest,backup)!=OK: return fail("Backup failed")
 	if DirAccess.rename_absolute(ProjectSettings.globalize_path(tmp),dest)!=OK: return fail("Save replace failed")
@@ -267,7 +272,7 @@ func save() -> Dictionary:
 func load_save() -> Dictionary:
 	for path in [save_path,save_path+".bak"]:
 		if not FileAccess.file_exists(path): continue
-		var parsed: Variant = integers(JSON.parse_string(FileAccess.get_file_as_string(path)))
+		var parsed: Variant = parse_save(FileAccess.get_file_as_string(path))
 		if parsed is Dictionary and valid_state(parsed):
 			_state = parsed
 			return {"ok":true,"backup":path.ends_with(".bak")}
