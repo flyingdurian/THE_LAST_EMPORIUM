@@ -1,2 +1,2 @@
-# The Last Emporium — Gate D1 candidate
-Godot 4.3. Import project.godot and F5. Navigate Shop Floor / Counter / Stockroom using the header. Select merchandise in stockroom, appraise and display in compatible slots. Click a fixture and choose an authored free socket. Open the shop and serve the actual waiting customer. Offline actions only. See HANDOFF.md and docs/ASSET_REPLACEMENT_GUIDE.md. Run tests/run_all.sh with GODOT set to Godot 4.3. D2 art benchmark remains pending.
+# The Last Emporium — Gate D2
+Godot 4.3, offline visual benchmark candidate. Import project.godot F5. Shop Floor/Counter/Stockroom. Inspect at counter does not start a deal. Open and serve customer, use authored response actions, review and confirm. Menu has text speed, sound volume, save/load; SFX toggle in header. See HANDOFF.md and docs/ASSET_REPLACEMENT_GUIDE.md. Run tests/run_all.sh. No live AI yet.

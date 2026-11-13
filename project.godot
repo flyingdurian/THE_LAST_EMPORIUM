@@ -1,8 +1,10 @@
 ; Godot 4 project, offline graybox integration harness
 config_version=5
 [application]
-config/name="The Last Emporium - Gate D1 candidate"
+config/name="The Last Emporium - Gate D2 benchmark"
 run/main_scene="res://ui/GateC.tscn"
+[autoload]
+EmporiumAudio="*res://audio/manager.gd"
 [display]
 window/size/viewport_width=1280
 window/size/viewport_height=720

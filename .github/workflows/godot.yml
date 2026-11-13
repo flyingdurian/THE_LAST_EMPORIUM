@@ -6,6 +6,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - name: Install Godot 4.3 stable
@@ -18,7 +19,7 @@ jobs:
       - name: Capture running presentation
         run: |
           mkdir -p .artifacts/logs
-          LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a /tmp/godot/Godot_v4.3-stable_linux.x86_64 --audio-driver Dummy --path "$PWD" --script res://tests/capture.gd
+          LIBGL_ALWAYS_SOFTWARE=1 timeout 90s xvfb-run -a /tmp/godot/Godot_v4.3-stable_linux.x86_64 --audio-driver Dummy --path "$PWD" --script res://tests/capture.gd
       - name: Upload logs
         if: always()
         uses: actions/upload-artifact@v4
@@ -40,5 +41,5 @@ jobs:
       - name: Upload Windows playable
         uses: actions/upload-artifact@v4
         with:
-          name: TheLastEmporium-Windows-GateD1
+          name: TheLastEmporium-Windows-GateD2
           path: build/

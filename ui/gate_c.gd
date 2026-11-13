@@ -1,12 +1,10 @@
 extends Control
-## Gate C: a presentation adapter. Never writes the authoritative snapshot.
+## Gate D2: presentation adapter. No authority over settlement or customer state.
 const Shop = preload("res://domain/shop.gd")
 const Negotiation = preload("res://domain/negotiation.gd")
 const Speech = preload("res://domain/dialogue.gd")
-const FLOOR = preload("res://art/floor_clean.jpg")
-const COUNTER = preload("res://art/counter_clean.jpg")
 const OWNER = preload("res://art/merchant_floor.png")
-const CUSTOMER = preload("res://art/customer_floor.png")
+const Presentation = preload("res://ui/d2_presentation.gd")
 const Ambient = preload("res://ui/ambient.gd")
 const ITEM = preload("res://art/dragonstone.png")
 const SAVE_UI = "user://emporium_gate_d1_ui.json"
@@ -14,6 +12,19 @@ const Assets = preload("res://ui/d1_assets.gd")
 const Fixtures = preload("res://domain/fixtures.gd")
 var shop = Shop.new(Assets.content())
 var selected_fixture := "shelf"
+var audio_service: Node
+const AudioService = preload("res://audio/manager.gd")
+var portrait: TextureRect
+var dialogue_label: Label
+var dialogue_tween: Tween
+var portrait_event := ""
+var reveal_next := false
+var gold_feedback := 0
+var dialogue_speed := 1 # 0 instant, 1 normal, 2 slow
+var floor_items: Dictionary = {}
+var counter_items: Dictionary = {}
+var counter_room: TextureRect
+var counter_surface: TextureRect
 var view := "floor"
 var drawer := ""
 var ledger := false
@@ -42,8 +53,13 @@ const GREEN = Color("355546")
 
 func _ready() -> void:
 	get_window().min_size = Vector2i(960,540)
+	audio_service = get_tree().root.get_node_or_null("EmporiumAudio")
+	if audio_service == null:
+		audio_service = AudioService.new(); add_child(audio_service)
 	heading_font = SystemFont.new(); heading_font.font_names = PackedStringArray(["Georgia","DejaVu Serif","Noto Serif"]); heading_font.font_weight = 700
 	conversation_font = SystemFont.new(); conversation_font.font_names = PackedStringArray(["Georgia","DejaVu Serif","Noto Serif"])
+	var prefs := ConfigFile.new()
+	if prefs.load("user://emporium_presentation.cfg")==OK: dialogue_speed = clampi(int(prefs.get_value("dialogue","speed",1)),0,2)
 	refresh()
 
 func box(parent: Control, rect: Rect2, color: Color = INK) -> Panel:
@@ -80,7 +96,7 @@ func btn(parent: Control, text: String, rect: Rect2, fn: Callable, disabled: boo
 		if mode == "focus": sb.bg_color = Color(0,0,0,0)
 		sb.border_color = GOLD; sb.set_border_width_all(1); sb.set_corner_radius_all(5)
 		b.add_theme_stylebox_override(mode,sb)
-	b.pressed.connect(fn); parent.add_child(b)
+	b.pressed.connect(func(): audio_service.cue("click"); fn.call()); parent.add_child(b)
 	return b
 
 func pic(parent: Control, texture: Texture2D, rect: Rect2, cover: bool = false) -> TextureRect:
@@ -96,7 +112,10 @@ func active(s: Dictionary) -> bool:
 	return not s.session.is_empty() and s.session.status in ["negotiating","pending"]
 
 func waiting(s: Dictionary) -> bool:
-	return s.phase == "open" and not s.visited and not s.customer.safety_hold and int(s.customer.ban_until) <= int(s.day)
+	return Presentation.presence(s) == "waiting"
+
+func social_present(s: Dictionary) -> bool:
+	return Presentation.presence(s) == "social"
 
 func switch_view(target: String) -> void:
 	if view == target: return
@@ -123,12 +142,23 @@ func command(kind: String, args: Dictionary = {}, player_line: String = "") -> v
 		message = str(r.get("error","Action rejected")); refresh(); return
 	message = ""
 	var after := shop.snapshot()
+	if kind == "visit":
+		portrait_event = "enter"; reveal_next = true; audio_service.cue("arrival")
+	elif kind in ["act","confirm"]:
+		reveal_next = true
+		if active(before) and not active(after): portrait_event = "exit"
+		elif before.session.get("expression","") != after.session.get("expression",""): portrait_event = "reaction"
+		if int(after.gold) > int(before.gold):
+			gold_feedback = int(after.gold)-int(before.gold); audio_service.cue("sale")
+		elif after.session.get("expression","") in ["offended","fearful","frightened","distressed"]: audio_service.cue("tension")
 	if kind == "visit" and not after.session.is_empty() and (before.session.is_empty() or before.session.session != after.session.session):
 		history = []; history_session = int(after.session.session)
 		append_npc(after)
 	elif kind in ["act","confirm"] and not after.session.is_empty():
 		if player_line != "": history.append({"speaker":"You","text":player_line})
 		append_npc(after)
+	elif kind == "visit" and social_present(after):
+		history = [{"speaker":str(after.customer.name),"text":str(after.return_note)}]; history_session = -1
 	elif kind == "next_day":
 		history = []; history_session = -1; last_line = ""
 	if kind == "visit": view = "counter"; drawer = ""
@@ -160,6 +190,9 @@ func open_counter() -> void:
 func refresh() -> void:
 	if transition and transition.is_valid(): transition.kill()
 	transition = null
+	if dialogue_tween and dialogue_tween.is_valid(): dialogue_tween.kill()
+	dialogue_tween = null; dialogue_label = null; portrait = null; item_stage = null; counter_room = null; counter_surface = null
+	floor_items.clear(); counter_items.clear()
 	owner_sprite = null
 	if is_instance_valid(root):
 		remove_child(root); root.queue_free()
@@ -175,12 +208,19 @@ func refresh() -> void:
 	label(root,message if message != "" else ("Select a fixture, counter or stockroom  •  Offline prototype" if view == "floor" else "Offline prototype  •  Structured actions, no live AI"),Rect2(20,690,1000,25),15,MUTED)
 	btn(root,"Debug",Rect2(1175,688,86,27),func(): debug = not debug; refresh())
 	if debug: draw_debug()
+	if gold_feedback > 0:
+		var toast := label(root,"+%dg" % gold_feedback,Rect2(485,66,140,38),26,Color("f4ce77"))
+		var ft := create_tween().bind_node(toast).set_parallel(true)
+		ft.tween_property(toast,"position:y",32.0,1.1); ft.tween_property(toast,"modulate:a",0.0,1.1)
+		gold_feedback = 0
+	portrait_event = ""; reveal_next = false
 
 func draw_header(s: Dictionary) -> void:
 	box(root,Rect2(0,0,1280,62),Color("201817"))
 	label(root,"THE LAST EMPORIUM",Rect2(18,14,350,40),27)
 	label(root,"Day %d" % s.day,Rect2(390,19,90,30),20)
-	label(root,"%dg" % s.gold,Rect2(490,19,150,30),20,GOLD)
+	label(root,"%dg" % s.gold,Rect2(484,19,104,30),20,GOLD)
+	btn(root,"SFX off" if audio_service.muted else "SFX on",Rect2(585,17,61,28),func(): audio_service.set_muted(not audio_service.muted); refresh())
 	var status_text := str(s.phase).capitalize()
 	btn(root,"Shop: " + status_text,Rect2(648,10,136,42),func(): open_status())
 	btn(root,"Menu",Rect2(792,10,76,42),func(): open_drawer("menu"))
@@ -193,11 +233,8 @@ func draw_floor(s: Dictionary) -> void:
 	var plate := pic(root,Assets.texture(str(Assets.config().floor)),Rect2(0,62,1280,622))
 	plate.stretch_mode = TextureRect.STRETCH_SCALE
 	# Stationary shopkeeper, independent of the background; the counter masks the lower body.
-	var keeper := AtlasTexture.new()
-	keeper.atlas = OWNER
-	keeper.region = Rect2(0,0,OWNER.get_width(),OWNER.get_height()*0.58)
-	pic(root,keeper,Rect2(534,185,64,75))
-	if waiting(s) or active(s): pic(root,CUSTOMER,Rect2(620,253,48,110))
+	pic(root,Assets.texture(str(Assets.config().keeper)),Rect2(532,178,76,84))
+	if waiting(s) or active(s) or social_present(s): pic(root,Assets.texture(str(Assets.config().customer_floor)),Rect2(612,252,44,94))
 	for fixture in Fixtures.IDS:
 		draw_fixture(s,fixture)
 	btn(root,"Counter",Rect2(330,245,146,36),func(): open_counter())
@@ -227,8 +264,10 @@ func draw_fixture(s: Dictionary, fixture: String) -> void:
 		if active(s) and i.instance == s.selected: continue
 		var slot := int(str(i.location).get_slice(":",1))
 		if slot < first or slot >= first+2: continue
-		var x := pos.x+34+(slot-first)*108
-		pic(root,Assets.item_texture(i),Rect2(x,pos.y-18 if fixture=="shelf" else pos.y+12,92,90))
+		var item_rect := Presentation.display_rect(i,pos,slot-first,1.0)
+		var display := pic(root,Assets.item_texture(i),item_rect)
+		display.name = "Display_" + str(i.instance)
+		floor_items[str(i.instance)] = display
 	btn(root,"Display shelf" if fixture=="shelf" else "Equipment rack",Rect2(pos.x+36,pos.y+100,188,31),func(): selected_fixture=fixture; open_drawer("fixture"))
 func draw_fixture_panel(s: Dictionary) -> void:
 	box(root,Rect2(15,372,315,300))
@@ -318,38 +357,55 @@ func draw_stock(s: Dictionary) -> void:
 func draw_counter(s: Dictionary) -> void:
 	var n: Dictionary = s.session
 	var is_active := active(s)
-	var has_customer: bool = is_active
-	var scene_art := pic(root,COUNTER if has_customer else FLOOR,Rect2(0,62,1280,456))
-	scene_art.stretch_mode = TextureRect.STRETCH_SCALE
-	add_ambient(Rect2(0,62,1280,456))
-	if has_customer:
-		box(root,Rect2(22,78,305,78))
+	var has_customer: bool = is_active or social_present(s)
+	var show_departure := portrait_event == "exit"
+	# Identical physical view for inspection, waiting, negotiation and settlement.
+	counter_room = pic(root,Assets.texture(str(Assets.config().counter_room)),Rect2(0,62,1280,330))
+	counter_room.stretch_mode = TextureRect.STRETCH_SCALE
+	draw_counter_fixtures(s)
+	if has_customer or show_departure:
+		var emotion: String = str(n.get("expression","relieved" if int(s.customer.get("history_modifier",0)) > 0 else "interested"))
+		var key := Presentation.expression(emotion)
+		portrait = pic(root,Assets.texture(str(Assets.config().portraits[key])),Rect2(306,78,364,416))
+		portrait.name = "CustomerPortrait"
+		animate_customer(portrait,emotion,float(s.customer.get("presentation_motion",1.0)))
+	# Physical counter surface occludes the lower body. All staged merchandise is above this layer.
+	counter_surface = pic(root,Assets.texture(str(Assets.config().counter_surface)),Rect2(0,390,1280,128))
+	counter_surface.stretch_mode = TextureRect.STRETCH_SCALE
+	if has_customer or show_departure:
+		box(root,Rect2(22,78,278,78))
 		label(root,str(s.customer.name),Rect2(36,88,275,32),27)
-		label(root,str(n.get("expression","Interested")).capitalize(),Rect2(36,123,275,26),17,GOLD)
+		label(root,str(n.get("expression","Remembering")).capitalize(),Rect2(36,123,250,26),17,GOLD)
 	else:
 		box(root,Rect2(22,78,405,90)); label(root,"Your counter awaits",Rect2(38,90,370,38),25)
-		label(root,s.return_note if s.return_note != "" else "Prepare your display and open the shop.",Rect2(38,128,370,38),16,MUTED)
+		label(root,"Inspection preview — no deal in progress" if s.item.owner=="shop" else "Prepare your display and open the shop.",Rect2(38,128,370,38),16,MUTED)
 		if waiting(s): btn(root,"Welcome customer",Rect2(22,180,240,45),func(): open_counter(),false,true)
 	var i: Dictionary = s.item
 	# Item anchor is independent of the HUD and ledger; texture fit accommodates large objects.
-	if is_active or i.owner=="shop":
-		item_stage = pic(root,Assets.item_texture(i),Rect2(795,318,270,192))
-		# Match the physical counter plane in the temporary art. Large objects can use the full 470×280 stage.
-		item_stage.stretch_mode = TextureRect.STRETCH_SCALE
-		if str(i.get("stage_size","small")) == "large":
-			item_stage.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-			item_stage.position = Vector2(740,228); item_stage.size = Vector2(470,282)
+	if is_active or (i.owner=="shop" and not social_present(s)):
+		var stage := Presentation.stage_rect(i)
+		pic(root,Assets.texture(str(Assets.config().stage_shadow)),Presentation.shadow_rect(i))
+		item_stage = pic(root,Presentation.stage_texture(i),stage)
+		item_stage.name = "StagedItem"
 		box(root,Rect2(944,78,316,124))
 		pic(root,Assets.item_texture(i),Rect2(955,91,74,91))
-		label(root,str(i.name),Rect2(1038,91,207,34),21 if str(i.name).length() > 18 else 24)
-		label(root,"Condition %d%%\nAsking %dg" % [i.condition_pct,n.get("ask",i.asking)],Rect2(1038,130,207,55),17,GOLD)
+		label(root,str(i.name),Rect2(1035,88,213,50),19 if str(i.name).length() > 12 else 24)
+		label(root,"Condition %d%%" % i.condition_pct,Rect2(1038,144,207,25),16,GOLD)
+		label(root,"Asking %dg" % n.get("ask",i.asking),Rect2(1038,169,207,25),17,GOLD)
 	btn(root,"Hide ledger" if ledger else "View ledger",Rect2(1065,213,194,40),func(): ledger = not ledger; refresh())
 	if ledger: draw_ledger()
 	box(root,Rect2(22,518,858,159),Color("30221c"))
 	label(root,str(s.customer.name) if has_customer else "Counter",Rect2(36,528,820,26),18,GOLD)
 	var line: String = Speech.render(Negotiation.public_plan(n)) if not n.is_empty() else (str(s.return_note) if s.return_note != "" else "No active conversation.")
-	var dialogue_line := label(root,line,Rect2(36,556,825,57),22)
-	if conversation_font != null: dialogue_line.add_theme_font_override("font",conversation_font)
+	var sc := ScrollContainer.new(); sc.position=Vector2(36,555); sc.size=Vector2(825,64); sc.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; root.add_child(sc)
+	var lines := VBoxContainer.new(); lines.size_flags_horizontal=Control.SIZE_EXPAND_FILL; sc.add_child(lines)
+	dialogue_label = label(lines,line,Rect2(0,0,807,57),21)
+	dialogue_label.custom_minimum_size = Vector2(807,0)
+	if conversation_font != null: dialogue_label.add_theme_font_override("font",conversation_font)
+	dialogue_label.mouse_filter = Control.MOUSE_FILTER_STOP
+	dialogue_label.gui_input.connect(func(event: InputEvent):
+		if event is InputEventMouseButton and event.pressed and event.button_index==MOUSE_BUTTON_LEFT: skip_dialogue())
+	if reveal_next and dialogue_speed>0: start_dialogue(line)
 	var edit := LineEdit.new(); edit.position = Vector2(36,624); edit.size = Vector2(610,40); edit.placeholder_text = "Free text unavailable offline • choose a response"; edit.editable = false; root.add_child(edit)
 	btn(root,"Respond…",Rect2(660,624,202,40),func(): open_drawer("responses"),is_active == false or n.status != "negotiating",true)
 	box(root,Rect2(898,518,362,159),Color("ead5b2"))
@@ -357,7 +413,7 @@ func draw_counter(s: Dictionary) -> void:
 	var offer := int(n.get("offer",0))
 	label(root,("%dg  •  %s" % [offer,i.name]) if is_active else "No active offer",Rect2(912,555,335,43),25,Color("36251c"))
 	var pending: bool = is_active and n.status == "pending"
-	label(root,"Awaiting your confirmation" if pending else "Customer offer — not yet accepted",Rect2(912,594,335,29),15,Color("79512f"))
+	label(root,"Awaiting your confirmation" if pending else ("Customer offer — not yet accepted" if is_active else "Inspection only — no transaction"),Rect2(912,594,335,29),15,Color("79512f"))
 	btn(root,"Confirm sale" if pending else "Review offer",Rect2(912,628,159,39),func(): review_or_confirm(pending),not is_active,true)
 	btn(root,"Reject / leave",Rect2(1080,628,166,39),func(): act("reject","No deal."),not is_active)
 	if drawer == "responses" and is_active and n.status == "negotiating": draw_responses(s)
@@ -404,10 +460,14 @@ func choose_response(kind: String, caption: String, priced: bool) -> void:
 	dialog.popup_centered()
 
 func draw_menu() -> void:
-	box(root,Rect2(805,70,249,174))
+	box(root,Rect2(805,70,249,299))
 	label(root,"Shop menu",Rect2(821,84,205,32),23)
 	btn(root,"Save game",Rect2(821,122,217,43),func(): save_game(),false,true)
 	btn(root,"Load game",Rect2(821,173,217,43),func(): load_game())
+	btn(root,"Text: " + ["Instant","Normal","Slow"][dialogue_speed],Rect2(821,224,217,43),func(): set_dialogue_speed((dialogue_speed+1)%3))
+	label(root,"Effects volume",Rect2(821,273,217,25),16,MUTED)
+	var volume := HSlider.new(); volume.min_value=0; volume.max_value=1; volume.step=0.05; volume.value=audio_service.volume; volume.position=Vector2(821,309); volume.size=Vector2(217,30); root.add_child(volume)
+	volume.value_changed.connect(func(v: float): audio_service.set_volume(v))
 
 func draw_debug() -> void:
 	box(root,Rect2(20,70,315,178),Color("241d1b"))
@@ -442,3 +502,62 @@ func add_ambient(rect: Rect2) -> void:
 	a.position = rect.position; a.size = rect.size; a.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(a)
 
+
+func draw_counter_fixtures(s: Dictionary) -> void:
+	# Selective authored projections. No unrelated or synthetic shoppers.
+	var config := Assets.config()
+	for fixture in Fixtures.IDS:
+		var socket: String = str(s.fixtures[fixture])
+		var coords: Array = config.counter_sockets[socket]
+		var pos := Vector2(float(coords[0]),float(coords[1]))
+		var scale_factor := float(coords[2])
+		pic(root,Assets.texture(str(config[fixture])),Rect2(pos,Vector2(260,130)*scale_factor))
+		var first := 0 if fixture=="shelf" else 2
+		for item in s.items.values():
+			if item.owner!="shop" or not str(item.location).begins_with("shelf:"): continue
+			# The selected object is represented by the independent stage, not twice in this view.
+			if item.instance==s.selected: continue
+			var slot := int(str(item.location).get_slice(":",1))
+			if slot<first or slot>=first+2: continue
+			var t := pic(root,Assets.item_texture(item),Presentation.display_rect(item,pos,slot-first,scale_factor))
+			t.name = "Background_" + str(item.instance)
+			counter_items[str(item.instance)] = t
+
+func animate_customer(node: TextureRect, emotion: String, intensity: float) -> void:
+	var amount := clampf(intensity,0.0,1.5)
+	if amount<=0.0:
+		if portrait_event=="exit": node.hide()
+		return
+	var home := node.position
+	var t := create_tween().bind_node(node)
+	match portrait_event:
+		"enter":
+			node.position.x -= 30.0*amount; node.modulate.a=0.0
+			t.set_parallel(true); t.tween_property(node,"position",home,0.32).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT); t.tween_property(node,"modulate:a",1.0,0.28)
+		"exit":
+			t.tween_interval(0.18); t.set_parallel(true); t.tween_property(node,"position:x",home.x-35.0*amount,0.32).set_delay(0.18); t.tween_property(node,"modulate:a",0.0,0.30).set_delay(0.18)
+			t.chain().tween_callback(node.hide)
+		"reaction":
+			var offset := Presentation.reaction(emotion)*amount
+			t.tween_property(node,"position",home+offset,0.09).set_trans(Tween.TRANS_SINE)
+			t.tween_property(node,"position",home,0.17).set_trans(Tween.TRANS_SINE)
+		_: t.kill()
+
+func start_dialogue(line: String) -> void:
+	if not is_instance_valid(dialogue_label): return
+	dialogue_label.visible_characters=0
+	var duration := float(line.length()) / (60.0 if dialogue_speed==1 else 30.0)
+	dialogue_tween = create_tween().bind_node(dialogue_label)
+	dialogue_tween.tween_property(dialogue_label,"visible_characters",line.length(),maxf(0.12,duration))
+	dialogue_tween.tween_callback(func():
+		if is_instance_valid(dialogue_label): dialogue_label.visible_characters=-1)
+	audio_service.cue("text")
+
+func skip_dialogue() -> void:
+	if dialogue_tween and dialogue_tween.is_valid(): dialogue_tween.kill()
+	if is_instance_valid(dialogue_label): dialogue_label.visible_characters=-1
+
+func set_dialogue_speed(speed: int) -> void:
+	dialogue_speed = clampi(speed,0,2); skip_dialogue()
+	var prefs := ConfigFile.new(); prefs.load("user://emporium_presentation.cfg"); prefs.set_value("dialogue","speed",dialogue_speed); prefs.save("user://emporium_presentation.cfg")
+	refresh()
