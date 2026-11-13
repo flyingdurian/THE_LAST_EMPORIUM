@@ -6,7 +6,7 @@ func capture(name: String) -> void:
 	await process_frame
 	await process_frame
 	await RenderingServer.frame_post_draw
-	root.get_texture().get_image().save_png("res://.artifacts/logs/" + name + ".png")
+	root.get_texture().get_image().save_png(OS.get_environment("PWD") + "/.artifacts/logs/" + name + ".png")
 func run() -> void:
 	root.size = Vector2i(1280,720)
 	var ui = Shell.instantiate()
