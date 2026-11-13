@@ -3,7 +3,7 @@ extends Node
 var muted := false
 var volume := 0.55
 var streams: Dictionary = {}
-const PATHS = {"arrival":"res://audio/arrival.ogg","sale":"res://audio/sale.ogg","click":"res://audio/click.ogg","text":"res://audio/text.ogg","tension":"res://audio/tension.ogg"}
+const CUES = ["arrival","sale","click","text","tension"]
 func _ready() -> void:
 	var prefs := ConfigFile.new()
 	if prefs.load("user://emporium_audio.cfg")==OK:
@@ -20,9 +20,9 @@ func set_volume(value: float) -> void:
 		if child is AudioStreamPlayer: child.volume_db=-80.0 if muted else linear_to_db(maxf(volume,0.001))-13.0
 func cue(name: String) -> void:
 	if muted or volume<=0.0 or OS.has_feature("headless") or DisplayServer.get_name()=="headless": return
-	if not PATHS.has(name): return
+	if not name in CUES: return
 	if not streams.has(name):
-		var path: String = PATHS[name]
+		var path: String = "res://" + "audio/" + name + ".ogg"
 		streams[name]=load(path) if ResourceLoader.exists(path) else synth(name)
 	var player := AudioStreamPlayer.new(); player.stream=streams[name]; player.volume_db=linear_to_db(maxf(volume,0.001))-13.0
 	add_child(player); player.finished.connect(player.queue_free); player.play()

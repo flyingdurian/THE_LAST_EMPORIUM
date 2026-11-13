@@ -547,7 +547,8 @@ func start_dialogue(line: String) -> void:
 	var duration := float(line.length()) / (60.0 if dialogue_speed==1 else 30.0)
 	dialogue_tween = create_tween().bind_node(dialogue_label)
 	dialogue_tween.tween_property(dialogue_label,"visible_characters",line.length(),maxf(0.12,duration))
-	dialogue_tween.tween_callback(func(): if is_instance_valid(dialogue_label): dialogue_label.visible_characters=-1)
+	dialogue_tween.tween_callback(func():
+		if is_instance_valid(dialogue_label): dialogue_label.visible_characters=-1)
 	EmporiumAudio.cue("text")
 
 func skip_dialogue() -> void:
