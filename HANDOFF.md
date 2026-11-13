@@ -1,13 +1,20 @@
-# The Last Emporium — Gate C candidate 0.1
+# The Last Emporium — Gate C visual iteration 2
 
-## Status
-Implementation candidate; Godot runtime and visual approval pending. Owner approved Shop Floor and Counter B+ with expandable ledger, large item stage and persistent HUD. No new roster, AI, debt or world simulation.
+## Owner decisions / status
+Shop Floor approved with future expansion capacity. Counter B+ approved: face-to-face tableau, independent physical item stage, expandable ledger, persistent thumbnail/asking HUD. This is a **runtime-tested offline implementation candidate**, not final art sign-off. Creative canon, resolution, palette, portrait rig and exact balance remain provisional. PR #1 stays draft; main unchanged.
 
-## Implemented source
-`ui/GateC.tscn` and `ui/gate_c.gd` provide the two-view shell. Single Shop instance; navigation only changes presentation flags. Contextual stock/status drawers, waiting customer, item stage, ledger, structured offline responses and explicit confirmation. UI sidecar stores history, view and ledger state, matching the authoritative save revision. Original graybox `ui/Main.tscn`, domain modules, benchmark data and regression suite remain intact. Added presentation regression tests and CI.
+## Delivered
+- One shared Shop session, thin presentation adapter, contextual stock/status controls, player save/load menu and separate developer panel. Floor owner movement and Vessa visibility are presentation-driven. Original graybox scene retained.
+- Counter B+ with original temporary concept backdrop, staged item anchored to counter, bounded thumbnail and current asking price, ledger overlay, serif hierarchy, subtle ambient motes, authored offline responses, confirmation and rejection. The stage supports an aspect-fit large-object mode; no additional item catalog.
+- Original domain rules preserved; only shop save decoding changed to use non-logging JSON parser for intentional corrupt-save recovery. No AI, roster, barter UI, expedition, rumor simulation or debt expansion.
+- Save/load persists authoritative domain state and a revision-matched UI sidecar. Tests cover exact-once sale, navigation, stage bounds, history and restoration.
 
-## Evidence and limitations
-Independent arithmetic and static checks passed; original domain files compared byte-for-byte. Godot not installed locally. Runtime tests authored, not locally executed. No exported executable or actual runtime screenshot. Temporary concept plates are not a live world render; static figures and props remain, portrait is a single pose, and walking remains in the legacy scene. Emotion cue is text. Item stage supports aspect-fit, not yet proven with large production assets. Art is temporary, not final. Actual shared background, modular floor geometry, expressions and character matching remain Gate D work. Free text explicitly disabled offline. No claim of final visual fidelity.
+## Real evidence
+Godot 4.3 stable CI: https://github.com/flyingdurian/THE_LAST_EMPORIUM/actions/runs/43510086991
+37 domain checks passed; 8 presentation checks passed; import, main scene and resolution smoke passed. Screenshot capture under Xvfb at 1280x720 and 960x540 succeeded; visual iteration fixed thumbnail overflow and floating item, confirmed by actual captures. Latest Windows export workflow is an additional delivery gate; see Actions for result.
+
+## Remaining fidelity work
+The counter background is a static illustrated shop concept plate with ambient animation, not the actual shared geometry from the shop floor. Background figures are decorative, not simulated customers. The temporary floor has static furniture and clerk art, dynamic owner/customer cutouts, and approximate collision footprints. It is not yet a modular expandable world. Vessa is a single painted pose with state-driven expression text, not a neutral/alternate expression rig. Portrait and pixel-sprite match, larger item art and live background require the Gate D benchmark and approval. UI is fixed logical canvas scaled at supported sizes; manual long text, keyboard focus, accessibility, interactive resize and visual playtest remain. No claim of final fidelity.
 
 ## Run
-Godot 4: import project.godot, F5. Original harness: open ui/Main.tscn, F6. Run GODOT=/path/to/godot4 bash tests/run_all.sh. Stockroom -> Appraise -> Display -> Shop status -> Open -> Serve -> Respond -> enter 650 -> show appraisal -> acknowledge need -> confirm. Switch views and toggle ledger before confirmation. Debug panel provides save/load/reset. Test both 1280x720 and 960x540, long text, focus, persistence and exact-once settlement. Do not expand art or gameplay before the relevant approval gates.
+Godot 4.3: import project.godot, F5. Original harness: ui/Main.tscn F6. Windows export: unpack both EXE and PCK into same folder, run EXE (unsigned prototype). Stockroom > Appraise > Display > Shop status > Open > Serve > Respond > enter 650 > Show appraisal > Acknowledge need > Confirm sale. Switch views and toggle ledger while pending; gold must stay 120g until confirmation, then 770g. Menu Save/Load; WASD floor movement. Debug Reset creates a fresh fixture. Test both target window sizes. Run GODOT=/path/to/godot4 bash tests/run_all.sh.

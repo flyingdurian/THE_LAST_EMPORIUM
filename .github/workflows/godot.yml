@@ -25,3 +25,20 @@ jobs:
         with:
           name: godot-logs
           path: .artifacts/logs/
+      - name: Install Windows export template
+        run: |
+          wget -q https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_export_templates.tpz -O /tmp/templates.tpz
+          mkdir -p "$HOME/.local/share/godot/export_templates/4.3.stable"
+          unzip -j -q /tmp/templates.tpz templates/windows_release_x86_64.exe -d "$HOME/.local/share/godot/export_templates/4.3.stable"
+      - name: Export Windows playable
+        run: |
+          mkdir -p build
+          /tmp/godot/Godot_v4.3-stable_linux.x86_64 --headless --path "$PWD" --export-release "Windows Desktop" build/TheLastEmporium.exe
+          test -s build/TheLastEmporium.exe
+          test -s build/TheLastEmporium.pck
+          ls -lh build
+      - name: Upload Windows playable
+        uses: actions/upload-artifact@v4
+        with:
+          name: TheLastEmporium-Windows-GateC
+          path: build/
