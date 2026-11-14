@@ -11,12 +11,16 @@ func check(ok: bool,name: String) -> void:
 	else: failed+=1; printerr("FAIL ",name)
 func _initialize() -> void:
 	call_deferred("run")
-func grid_ok(im: Image) -> bool:
+func grid_ok(im: Image,strict: bool=false) -> bool:
 	if im.get_size()!=Vector2i(544,48): return false
 	for y in range(0,48,2):
 		for x in range(0,544,2):
 			var c:=im.get_pixel(x,y)
-			if c!=im.get_pixel(x+1,y) or c!=im.get_pixel(x,y+1) or c!=im.get_pixel(x+1,y+1): return false
+			for off in [Vector2i(1,0),Vector2i(0,1),Vector2i(1,1)]:
+				var q:=im.get_pixel(x+off.x,y+off.y)
+				# Godot import repairs RGB under alpha-zero edges to avoid smooth-filter fringes.
+				# This must never change alpha or visible texels. Source bytes are checked strictly.
+				if c.a!=q.a or ((strict or c.a>0.0) and c!=q): return false
 	return true
 func run() -> void:
 	var art=JArt.new()
@@ -27,7 +31,9 @@ func run() -> void:
 	for id in art.registry.characters:
 		var rec: Dictionary=art.registry.characters[id]
 		var sheet: Texture2D=art.tex(str(rec.pixel_sprite_sheet))
-		check(sheet!=null and grid_ok(sheet.get_image()),"uniform 32x48 frames and 2px source grid "+id)
+		var raw:=Image.load_from_file(str(rec.pixel_sprite_sheet))
+		check(not raw.is_empty() and grid_ok(raw,true),"source exact 32x48 frame grid "+id)
+		check(sheet!=null and grid_ok(sheet.get_image()),"import preserves visible texels "+id)
 		var nonempty:=true
 		var unique: Dictionary={}
 		var im: Image=sheet.get_image()
