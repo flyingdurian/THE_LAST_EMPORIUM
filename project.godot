@@ -1,8 +1,8 @@
 ; Godot 4 project, offline graybox integration harness
 config_version=5
 [application]
-config/name="The Last Emporium - Gate D2 benchmark"
-run/main_scene="res://ui/GateC.tscn"
+config/name="The Last Emporium - Merchant's Week"
+run/main_scene="res://ui/Week.tscn"
 [autoload]
 EmporiumAudio="*res://audio/manager.gd"
 [display]

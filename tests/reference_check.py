@@ -28,3 +28,19 @@ for file in root.rglob('*'):
             assert (root/ref).is_file(),(file,ref)
 print('PASS static identity scan and resource references')
 print('NOTE: independent math/static checks only; no Godot engine execution.')
+
+# Gate E registry integrity and offline boundary.
+week=json.loads((root/'data/week.json').read_text())
+assert len(week['profiles'])==6 and len(week['items'])==10
+assets=json.loads((root/'data/d1_assets.json').read_text())
+def check_assets(v):
+    if isinstance(v,dict):
+        for x in v.values(): check_assets(x)
+    elif isinstance(v,list):
+        for x in v: check_assets(x)
+    elif isinstance(v,str) and v.startswith('res://'):
+        assert (root/v[6:]).is_file(),v
+check_assets(assets)
+for pth in list((root/'domain').glob('*.gd'))+list((root/'ui').glob('*.gd')):
+    assert not re.search(r'HTTPRequest|HTTPClient|WebSocketPeer|api\.openai\.com',pth.read_text()),pth
+print('PASS Gate E content registry and offline dependency scan')

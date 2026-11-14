@@ -5,7 +5,14 @@
   "items": {
     "dragonstone": "res://art/dragonstone.png",
     "knights_blade": "res://art/d2/sword.png",
-    "ironward_shield": "res://art/d2/shield.png"
+    "ironward_shield": "res://art/d2/shield.png",
+    "emberroot": "res://art/week/emberroot.svg",
+    "ember_tonic": "res://art/week/ember_tonic.svg",
+    "silver_locket": "res://art/week/silver_locket.svg",
+    "warding_tome": "res://art/week/warding_tome.svg",
+    "star_compass": "res://art/week/star_compass.svg",
+    "moon_glass": "res://art/week/moon_glass.svg",
+    "quarry_relic": "res://art/week/quarry_relic.svg"
   },
   "sockets": {
     "west": [
@@ -85,6 +92,76 @@
         46,
         13
       ]
+    },
+    "emberroot": {
+      "size": [
+        40,
+        42
+      ],
+      "offset": [
+        56,
+        -17
+      ]
+    },
+    "ember_tonic": {
+      "size": [
+        40,
+        42
+      ],
+      "offset": [
+        56,
+        -17
+      ]
+    },
+    "silver_locket": {
+      "size": [
+        40,
+        42
+      ],
+      "offset": [
+        56,
+        -17
+      ]
+    },
+    "warding_tome": {
+      "size": [
+        40,
+        42
+      ],
+      "offset": [
+        56,
+        -17
+      ]
+    },
+    "star_compass": {
+      "size": [
+        40,
+        42
+      ],
+      "offset": [
+        56,
+        -17
+      ]
+    },
+    "moon_glass": {
+      "size": [
+        40,
+        42
+      ],
+      "offset": [
+        56,
+        -17
+      ]
+    },
+    "quarry_relic": {
+      "size": [
+        40,
+        42
+      ],
+      "offset": [
+        56,
+        -17
+      ]
     }
   },
   "counter_items": {
@@ -110,6 +187,48 @@
       244,
       182,
       216
+    ],
+    "emberroot": [
+      860,
+      330,
+      125,
+      130
+    ],
+    "ember_tonic": [
+      865,
+      326,
+      120,
+      134
+    ],
+    "silver_locket": [
+      875,
+      350,
+      100,
+      110
+    ],
+    "warding_tome": [
+      830,
+      335,
+      180,
+      125
+    ],
+    "star_compass": [
+      855,
+      330,
+      130,
+      130
+    ],
+    "moon_glass": [
+      855,
+      322,
+      145,
+      138
+    ],
+    "quarry_relic": [
+      835,
+      320,
+      155,
+      140
     ]
   },
   "stage_shadows": {
@@ -130,6 +249,90 @@
       438,
       175,
       25
+    ],
+    "emberroot": [
+      865,
+      445,
+      115,
+      18
+    ],
+    "ember_tonic": [
+      870,
+      445,
+      110,
+      18
+    ],
+    "silver_locket": [
+      880,
+      445,
+      90,
+      18
+    ],
+    "warding_tome": [
+      835,
+      445,
+      170,
+      18
+    ],
+    "star_compass": [
+      860,
+      445,
+      120,
+      18
+    ],
+    "moon_glass": [
+      860,
+      445,
+      135,
+      18
+    ],
+    "quarry_relic": [
+      840,
+      445,
+      145,
+      18
     ]
+  },
+  "week_customers": {
+    "bram_alder": {
+      "floor": "res://art/week/bram_alder_floor.svg",
+      "portraits": {
+        "neutral": "res://art/week/bram_alder_neutral.png",
+        "pleased": "res://art/week/bram_alder_pleased.png",
+        "offended": "res://art/week/bram_alder_offended.png"
+      }
+    },
+    "marla_fen": {
+      "floor": "res://art/week/marla_fen_floor.svg",
+      "portraits": {
+        "neutral": "res://art/week/marla_fen_neutral.png",
+        "pleased": "res://art/week/marla_fen_pleased.png",
+        "offended": "res://art/week/marla_fen_offended.png"
+      }
+    },
+    "ser_caldus": {
+      "floor": "res://art/week/ser_caldus_floor.svg",
+      "portraits": {
+        "neutral": "res://art/week/ser_caldus_neutral.png",
+        "pleased": "res://art/week/ser_caldus_pleased.png",
+        "offended": "res://art/week/ser_caldus_offended.png"
+      }
+    },
+    "nyx_veil": {
+      "floor": "res://art/week/nyx_veil_floor.svg",
+      "portraits": {
+        "neutral": "res://art/week/nyx_veil_neutral.png",
+        "pleased": "res://art/week/nyx_veil_pleased.png",
+        "offended": "res://art/week/nyx_veil_offended.png"
+      }
+    },
+    "tovin_reed": {
+      "floor": "res://art/week/tovin_reed_floor.svg",
+      "portraits": {
+        "neutral": "res://art/week/tovin_reed_neutral.png",
+        "pleased": "res://art/week/tovin_reed_pleased.png",
+        "offended": "res://art/week/tovin_reed_offended.png"
+      }
+    }
   }
 }
