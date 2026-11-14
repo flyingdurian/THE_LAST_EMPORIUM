@@ -1,0 +1,288 @@
+{
+  "frame_size": [
+    32,
+    48
+  ],
+  "native_world_pixel_scale": 4,
+  "frame_count": 17,
+  "animations": {
+    "IDLE": [
+      0,
+      1
+    ],
+    "WALK": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "BROWSE": [
+      6,
+      7,
+      8
+    ],
+    "PICK_ITEM": [
+      9,
+      10
+    ],
+    "CHECKOUT_QUEUE": [
+      11,
+      12
+    ],
+    "INTERACT": [
+      13,
+      14
+    ],
+    "RESTOCK": [
+      15,
+      16
+    ]
+  },
+  "characters": {
+    "vessa_rook": {
+      "name": "Vessa Rook",
+      "pixel_sprite_sheet": "res://art/japan/vessa_rook_sheet.png",
+      "vn_portrait_set": {
+        "neutral": "res://art/japan/vessa_rook_neutral.webp",
+        "happy": "res://art/japan/vessa_rook_neutral.webp",
+        "impatient": "res://art/japan/vessa_rook_neutral.webp",
+        "surprised": "res://art/japan/vessa_rook_neutral.webp"
+      },
+      "marker": "kanzashi",
+      "palette": {
+        "hair": "#532b31",
+        "coat": "#6d365d",
+        "obi": "#aa4238",
+        "trim": "#e2bb70"
+      },
+      "expression_overlays": {
+        "happy": {
+          "texture": "res://art/japan/vessa_rook_happy_face.png",
+          "offset": [
+            274,
+            166
+          ]
+        },
+        "impatient": {
+          "texture": "res://art/japan/vessa_rook_impatient_face.png",
+          "offset": [
+            274,
+            166
+          ]
+        },
+        "surprised": {
+          "texture": "res://art/japan/vessa_rook_surprised_face.png",
+          "offset": [
+            274,
+            166
+          ]
+        }
+      }
+    },
+    "bram_alder": {
+      "name": "Bram Alder",
+      "pixel_sprite_sheet": "res://art/japan/bram_alder_sheet.png",
+      "vn_portrait_set": {
+        "neutral": "res://art/japan/bram_alder_neutral.svg",
+        "happy": "res://art/japan/bram_alder_happy.svg",
+        "impatient": "res://art/japan/bram_alder_impatient.svg",
+        "surprised": "res://art/japan/bram_alder_surprised.svg"
+      },
+      "marker": "scarf",
+      "palette": {
+        "hair": "#463027",
+        "coat": "#76513d",
+        "obi": "#bd9149",
+        "trim": "#d5ad66"
+      }
+    },
+    "marla_fen": {
+      "name": "Marla Fen",
+      "pixel_sprite_sheet": "res://art/japan/marla_fen_sheet.png",
+      "vn_portrait_set": {
+        "neutral": "res://art/japan/marla_fen_neutral.svg",
+        "happy": "res://art/japan/marla_fen_happy.svg",
+        "impatient": "res://art/japan/marla_fen_impatient.svg",
+        "surprised": "res://art/japan/marla_fen_surprised.svg"
+      },
+      "marker": "flower",
+      "palette": {
+        "hair": "#573d2f",
+        "coat": "#507750",
+        "obi": "#d2bb86",
+        "trim": "#e5cb9c"
+      }
+    },
+    "ser_caldus": {
+      "name": "Ser Caldus",
+      "pixel_sprite_sheet": "res://art/japan/ser_caldus_sheet.png",
+      "vn_portrait_set": {
+        "neutral": "res://art/japan/ser_caldus_neutral.svg",
+        "happy": "res://art/japan/ser_caldus_happy.svg",
+        "impatient": "res://art/japan/ser_caldus_impatient.svg",
+        "surprised": "res://art/japan/ser_caldus_surprised.svg"
+      },
+      "marker": "crest",
+      "palette": {
+        "hair": "#a9acb0",
+        "coat": "#384e76",
+        "obi": "#bda56d",
+        "trim": "#e6c37d"
+      }
+    },
+    "nyx_veil": {
+      "name": "Nyx Veil",
+      "pixel_sprite_sheet": "res://art/japan/nyx_veil_sheet.png",
+      "vn_portrait_set": {
+        "neutral": "res://art/japan/nyx_veil_neutral.svg",
+        "happy": "res://art/japan/nyx_veil_happy.svg",
+        "impatient": "res://art/japan/nyx_veil_impatient.svg",
+        "surprised": "res://art/japan/nyx_veil_surprised.svg"
+      },
+      "marker": "hood",
+      "palette": {
+        "hair": "#262439",
+        "coat": "#504064",
+        "obi": "#a27d54",
+        "trim": "#d8ae6d"
+      }
+    },
+    "tovin_reed": {
+      "name": "Tovin Reed",
+      "pixel_sprite_sheet": "res://art/japan/tovin_reed_sheet.png",
+      "vn_portrait_set": {
+        "neutral": "res://art/japan/tovin_reed_neutral.svg",
+        "happy": "res://art/japan/tovin_reed_happy.svg",
+        "impatient": "res://art/japan/tovin_reed_impatient.svg",
+        "surprised": "res://art/japan/tovin_reed_surprised.svg"
+      },
+      "marker": "hat",
+      "palette": {
+        "hair": "#92522d",
+        "coat": "#9a573c",
+        "obi": "#467a72",
+        "trim": "#edc984"
+      }
+    },
+    "shopkeeper": {
+      "name": "Shopkeeper",
+      "pixel_sprite_sheet": "res://art/japan/shopkeeper_sheet.png",
+      "vn_portrait_set": {
+        "neutral": "res://art/japan/shopkeeper_neutral.svg",
+        "happy": "res://art/japan/shopkeeper_happy.svg",
+        "impatient": "res://art/japan/shopkeeper_impatient.svg",
+        "surprised": "res://art/japan/shopkeeper_surprised.svg"
+      },
+      "marker": "headband",
+      "palette": {
+        "hair": "#332d2b",
+        "coat": "#345a5d",
+        "obi": "#9d4135",
+        "trim": "#dcc697"
+      }
+    }
+  },
+  "environment": {
+    "floor": "res://art/japan/floor.png",
+    "floor_counter": "res://art/japan/floor_counter.png",
+    "counter_room": "res://art/japan/counter_room.svg",
+    "counter_surface": "res://art/japan/counter_surface.svg",
+    "stockroom": "res://art/japan/stockroom.svg",
+    "shelf_world": "res://art/japan/shelf_world.png",
+    "rack_world": "res://art/japan/rack_world.png",
+    "shelf_counter": "res://art/japan/shelf_counter.svg",
+    "rack_counter": "res://art/japan/rack_counter.svg"
+  },
+  "items": {
+    "dragonstone": {
+      "world": "res://art/japan/dragonstone_world.png",
+      "icon": "res://art/japan/dragonstone_icon.svg",
+      "stage": "res://art/japan/dragonstone_icon.svg",
+      "world_size": [
+        12,
+        12
+      ]
+    },
+    "knights_blade": {
+      "world": "res://art/japan/knights_blade_world.png",
+      "icon": "res://art/japan/knights_blade_icon.svg",
+      "stage": "res://art/japan/knights_blade_stage.svg",
+      "world_size": [
+        22,
+        9
+      ]
+    },
+    "ironward_shield": {
+      "world": "res://art/japan/ironward_shield_world.png",
+      "icon": "res://art/japan/ironward_shield_icon.svg",
+      "stage": "res://art/japan/ironward_shield_icon.svg",
+      "world_size": [
+        14,
+        15
+      ]
+    },
+    "emberroot": {
+      "world": "res://art/japan/emberroot_world.png",
+      "icon": "res://art/japan/emberroot_icon.svg",
+      "stage": "res://art/japan/emberroot_icon.svg",
+      "world_size": [
+        12,
+        12
+      ]
+    },
+    "ember_tonic": {
+      "world": "res://art/japan/ember_tonic_world.png",
+      "icon": "res://art/japan/ember_tonic_icon.svg",
+      "stage": "res://art/japan/ember_tonic_icon.svg",
+      "world_size": [
+        12,
+        12
+      ]
+    },
+    "silver_locket": {
+      "world": "res://art/japan/silver_locket_world.png",
+      "icon": "res://art/japan/silver_locket_icon.svg",
+      "stage": "res://art/japan/silver_locket_icon.svg",
+      "world_size": [
+        12,
+        12
+      ]
+    },
+    "warding_tome": {
+      "world": "res://art/japan/warding_tome_world.png",
+      "icon": "res://art/japan/warding_tome_icon.svg",
+      "stage": "res://art/japan/warding_tome_icon.svg",
+      "world_size": [
+        12,
+        12
+      ]
+    },
+    "star_compass": {
+      "world": "res://art/japan/star_compass_world.png",
+      "icon": "res://art/japan/star_compass_icon.svg",
+      "stage": "res://art/japan/star_compass_icon.svg",
+      "world_size": [
+        12,
+        12
+      ]
+    },
+    "moon_glass": {
+      "world": "res://art/japan/moon_glass_world.png",
+      "icon": "res://art/japan/moon_glass_icon.svg",
+      "stage": "res://art/japan/moon_glass_icon.svg",
+      "world_size": [
+        12,
+        12
+      ]
+    },
+    "quarry_relic": {
+      "world": "res://art/japan/quarry_relic_world.png",
+      "icon": "res://art/japan/quarry_relic_icon.svg",
+      "stage": "res://art/japan/quarry_relic_icon.svg",
+      "world_size": [
+        12,
+        12
+      ]
+    }
+  }
+}

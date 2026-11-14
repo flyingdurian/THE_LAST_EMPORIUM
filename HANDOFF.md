@@ -6,3 +6,6 @@ Run Godot 4.3, F5; if source checkout lacks art/japan, run python3 tools/unpack_
 
 ## Grid verification correction
 Source PNG inspection found zero differences in all 2×2 texel blocks. The first runtime test compared invisible RGB as well: Godot's default alpha-border repair can populate RGB under fully transparent pixels. The revised test separately verifies every source RGBA block and imported alpha/visible RGB; nearest filtering is independently checked. This does not waive visible-pixel differences.
+
+## Verified Japanese review candidate
+CI 43541512021: 146 retained + 58 Japanese checks = 204 passed, zero failed. Source and imported grid verified, new scene captures at 1280×720 and 960×540, Windows export passed. Final small placement correction lowers keeper by 16 logical UI pixels so feet are occluded by counter while hands remain above the work surface. Registry is now a direct editable repository file. Re-run full CI on this final revision. Source artifact includes extracted assets; no manual Windows execution.

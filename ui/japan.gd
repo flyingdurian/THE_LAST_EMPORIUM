@@ -172,7 +172,7 @@ func draw_floor(s: Dictionary) -> void:
 	# Pixel-world art is independent from the smooth VN and UI layers.
 	pixel(root,jart.env("floor"),Rect2(0,64,1280,624))
 	# Stationary shopkeeper behind separate counter foreground; both arms above the counter.
-	keeper_node=pixel(root,jart.sprite("shopkeeper",0),Rect2(548,140,64,96))
+	keeper_node=pixel(root,jart.sprite("shopkeeper",0),Rect2(548,156,64,96))
 	keeper_node.name="ShopkeeperPixel"
 	pixel(root,jart.env("floor_counter"),Rect2(380,224,400,96))
 	for fixture in Fixtures.IDS:
