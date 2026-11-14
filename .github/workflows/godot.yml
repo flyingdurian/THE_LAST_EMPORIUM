@@ -9,6 +9,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      - name: Materialize Japanese project assets
+        run: python3 tools/unpack_japanese_assets.py
       - name: Install Godot 4.3 stable
         run: |
           wget -q https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_linux.x86_64.zip -O /tmp/godot.zip
@@ -21,6 +23,25 @@ jobs:
           mkdir -p .artifacts/logs
           LIBGL_ALWAYS_SOFTWARE=1 timeout 90s xvfb-run -a /tmp/godot/Godot_v4.3-stable_linux.x86_64 --audio-driver Dummy --path "$PWD" --script res://tests/capture.gd
           LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a /tmp/godot/Godot_v4.3-stable_linux.x86_64 --audio-driver Dummy --path "$PWD" --script res://tests/week_capture.gd
+          LIBGL_ALWAYS_SOFTWARE=1 timeout 90s xvfb-run -a /tmp/godot/Godot_v4.3-stable_linux.x86_64 --audio-driver Dummy --path "$PWD" --script res://tests/japan_capture.gd
+      - name: Upload full source project
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TheLastEmporium-Source-GateF
+          path: |
+            project.godot
+            export_presets.cfg
+            README.md
+            HANDOFF.md
+            art/
+            audio/
+            data/
+            docs/
+            domain/
+            tests/
+            tools/
+            ui/
       - name: Upload logs
         if: always()
         uses: actions/upload-artifact@v4
@@ -42,5 +63,5 @@ jobs:
       - name: Upload Windows playable
         uses: actions/upload-artifact@v4
         with:
-          name: TheLastEmporium-Windows-GateE
+          name: TheLastEmporium-Windows-GateF
           path: build/

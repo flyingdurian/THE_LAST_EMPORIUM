@@ -44,3 +44,11 @@ check_assets(assets)
 for pth in list((root/'domain').glob('*.gd'))+list((root/'ui').glob('*.gd')):
     assert not re.search(r'HTTPRequest|HTTPClient|WebSocketPeer|api\.openai\.com',pth.read_text()),pth
 print('PASS Gate E content registry and offline dependency scan')
+
+# Gate F verifies the registry and all imported resource paths.
+japan=json.loads((root/'data/character_assets.json').read_text())
+assert len(japan['characters'])==7 and len(japan['items'])==10
+check_assets(japan)
+assert japan['frame_size']==[32,48] and japan['frame_count']==17
+assert set(japan['animations'])=={'IDLE','WALK','BROWSE','PICK_ITEM','CHECKOUT_QUEUE','INTERACT','RESTOCK'}
+print('PASS Japanese asset registry and animation metadata')

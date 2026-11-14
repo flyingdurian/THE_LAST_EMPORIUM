@@ -25,5 +25,7 @@ run week --script res://tests/week.gd --quit-after 120
 grep -E "WEEK RESULT: [0-9]+ passed, 0 failed" .artifacts/logs/week.txt
 run week_ui --script res://tests/week_ui.gd --quit-after 120
 grep -E "WEEK UI RESULT: [0-9]+ passed, 0 failed" .artifacts/logs/week_ui.txt
+run japan --script res://tests/japan.gd --quit-after 240
+grep -E "JAPAN RESULT: [0-9]+ passed, 0 failed" .artifacts/logs/japan.txt
 run resolution_smoke res://ui/ResolutionCompare.tscn --quit-after 10
 printf '\nRuntime gate passed. Manual playtest still required.\n'
