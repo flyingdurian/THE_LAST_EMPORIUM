@@ -140,10 +140,10 @@ func draw_report(s: Dictionary) -> void:
 	box(root,Rect2(340,90,600,530),Color("30221c"))
 	var r: Dictionary=s.reports.back() if not s.reports.is_empty() else shop.day_report(s)
 	label(root,"DAY %d  /  CLOSING LEDGER"%r.day,Rect2(364,103,550,40),26,GOLD)
-	var rows: Array=[["Opening cash",r.opening],["Cash sales",r.sales],["Stock purchases",-r.purchases],["Barter cash",r.barter_cash],["Other expenses",-r.expenses],["Cash movement",r.cash_movement],["Closing cash",r.closing],["Cost of goods sold",r.cogs],["Barter goods received",r.barter_value],["Realized trading profit",r.profit]]
+	var rows: Array=[["Opening cash",r.opening],["Cash sales",r.sales],["Stock purchases",-r.purchases],["Barter cash",r.barter_cash],["Expedition outlay",-r.get("expedition_outlay",0)],["Other expenses",-r.expenses],["Debt payment",-r.get("debt_payment",0)],["Cash movement",r.cash_movement],["Closing cash",r.closing],["Cost of goods sold",r.cogs],["Barter goods received",r.barter_value],["Realized trading profit",r.profit]]
 	for idx in range(rows.size()):
-		label(root,"%s: %dg"%[rows[idx][0],rows[idx][1]],Rect2(364,151+idx*29,550,28),18,PAPER if idx!=9 else GOLD)
-	label(root,"%d deals  •  Profit excludes operating expenses"%r.deals,Rect2(364,449,550,28),16,MUTED)
+		label(root,"%s: %dg"%[rows[idx][0],rows[idx][1]],Rect2(364,151+idx*24,550,24),17,PAPER if idx!=rows.size()-1 else GOLD)
+	label(root,"%d deals  •  Trading profit includes noncash trade allowance"%r.deals,Rect2(364,449,550,28),16,MUTED)
 	label(root,"Payment overdue — recover through Day 5." if s.debt.warning else "Your shop is closed for the day.",Rect2(364,485,550,28),17,GOLD)
 	btn(root,"Continue to Day %d"%(s.day+1) if s.day<5 else "Week complete",Rect2(364,530,550,48),func(): command("next_day"),s.day>=5,true)
 

@@ -196,7 +196,7 @@ func settle_special(s: Dictionary,cmd: Dictionary) -> Dictionary:
 	n.status="completed"; n.speech_act="settled"; n.expression="pleased"; s.reservation={}
 	return commit(s)
 func day_report(s: Dictionary) -> Dictionary:
-	var r: Dictionary={"day":s.day,"opening":s.day_start_gold,"closing":s.gold,"sales":0,"purchases":0,"expenses":0,"cogs":0,"barter_value":0,"barter_cash":0,"deals":0,"cash_movement":0,"profit":0}
+	var r: Dictionary={"day":s.day,"opening":s.day_start_gold,"closing":s.gold,"sales":0,"purchases":0,"expenses":0,"expedition_outlay":0,"debt_payment":0,"cogs":0,"barter_value":0,"barter_cash":0,"deals":0,"cash_movement":0,"profit":0}
 	for a in s.journal:
 		if a.day!=s.day: continue
 		r.cash_movement+=int(a.cash)
@@ -204,6 +204,8 @@ func day_report(s: Dictionary) -> Dictionary:
 			"sale": r.sales+=int(a.cash); r.cogs+=int(a.cost); r.deals+=1
 			"purchase": r.purchases-=int(a.cash); r.deals+=1
 			"barter": r.barter_cash+=int(a.cash); r.barter_value+=int(a.value); r.cogs+=int(a.cost); r.deals+=1
+			"dispatch": r.expedition_outlay-=int(a.cash)
+			"pay_debt": r.debt_payment-=int(a.cash)
 			_: r.expenses-=int(a.cash)
 	r.profit=r.sales+r.barter_cash+r.barter_value-r.cogs
 	return r

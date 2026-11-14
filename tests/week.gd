@@ -69,7 +69,7 @@ func _initialize() -> void:
 	check(not confirm(w).ok,"duplicate purchase blocked")
 	cmd(w,"close")
 	var report: Dictionary=w.snapshot().reports.back()
-	check(report.sales==650 and report.purchases==65 and report.expenses==90 and report.cogs==360 and report.profit==290 and report.closing-report.opening==report.cash_movement,"day one ledger reconciles")
+	check(report.sales==650 and report.purchases==65 and report.expenses==0 and report.expedition_outlay==90 and report.cogs==360 and report.profit==290 and report.closing-report.opening==report.cash_movement,"day one ledger reconciles")
 	cmd(w,"next_day")
 	check(w.snapshot().day==2 and w.snapshot().profiles.vessa_rook.history_modifier==10,"return memory scheduled")
 	check(cmd(w,"expertise").ok and cmd(w,"upgrade",{"upgrade":"storage"}).ok and cmd(w,"upgrade",{"upgrade":"sign"}).ok,"expertise and two upgrades")
@@ -128,7 +128,7 @@ func _initialize() -> void:
 	var gold: int=300
 	for r in w.snapshot().reports:
 		gold+=int(r.cash_movement)
-		check(r.closing-r.opening==r.cash_movement,"daily report reconciliation %d"%r.day)
+		check(r.closing-r.opening==r.cash_movement and r.sales+r.barter_cash-r.purchases-r.expenses-r.expedition_outlay-r.debt_payment==r.cash_movement,"daily report reconciliation %d"%r.day)
 	check(gold==w.snapshot().gold,"week cash reconciles")
 	w.save(); restored=Week.new(path); check(restored.load_save().ok and restored.snapshot()==w.snapshot(),"five-day save exact")
 	# Independent poor merchant and stale/insufficient transaction cases.
