@@ -18,15 +18,27 @@ func floor_texture(c: Dictionary) -> Texture2D:
 	if c.id=="vessa_rook": return Assets.texture(str(Assets.config().customer_floor))
 	return Assets.texture(str(Assets.config().week_customers[c.id].floor))
 func provider_line(s: Dictionary) -> String:
-	return Provider.render(Negotiation.public_plan(s.session),{"style":s.customer.get("style","courteous"),"note":s.return_note if s.return_note!="" else "A little conversation is welcome. Let us return to business."})
+	return Provider.render(Negotiation.public_plan(s.session),{"style":s.customer.get("style","courteous"),"note":s.return_note if s.return_note!="" else "A little conversation is welcome. Let us return to business.","returning":not s.customer.memories.is_empty(),"goal":s.visit_goal})
 func append_npc(s: Dictionary) -> void:
 	last_line=provider_line(s)
 	history.append({"speaker":str(s.customer.name),"text":last_line})
 func deal_text(s: Dictionary) -> String:
-	if s.visit_goal in ["social","complaint"]: return "No trade requested"
+	if s.visit_goal in ["social","complaint"]: return "Conversation only"
 	if s.reservation.has("terms"): return "%dg + %s"%[s.session.offer,s.items[s.session.trade_item].name]
-	if s.visit_goal=="sell": return "Pay %dg  •  %s"%[s.session.offer,s.item.name]
-	return "%dg  •  %s"%[s.session.offer,s.item.name]
+	if s.visit_goal=="sell": return "Pay %dg"%s.session.offer
+	return "Receive %dg"%s.session.offer
+func deal_detail(s: Dictionary) -> String:
+	if not active(s): return "Inspection only — no transaction"
+	if s.visit_goal in ["social","complaint"]: return "No merchandise requested"
+	if s.reservation.has("terms"): return "Give "+str(s.item.name)+" • confirm to settle"
+	if s.visit_goal=="sell": return "Receive "+str(s.item.name)+(" • confirm" if s.session.status=="pending" else " • offer only")
+	return "Give "+str(s.item.name)+(" • confirm" if s.session.status=="pending" else " • offer only")
+func slot_name(loc: String) -> String:
+	if loc.begins_with("shelf:"):
+		var idx:=int(loc.get_slice(":",1))
+		return ("Shelf " if idx<2 else "Rack ")+str(idx%2+1)
+	if loc.begins_with("storage:"): return "Storage "+str(int(loc.get_slice(":",1))+1)
+	return "Awaiting storage" if loc=="delivery" else loc.capitalize()
 func command(kind: String,args: Dictionary={},player_line: String="") -> void:
 	super.command(kind,args,player_line)
 	if kind=="next_customer" and message=="":
@@ -72,7 +84,7 @@ func draw_stockroom(s: Dictionary) -> void:
 		box(root,Rect2(40,y,525,88),Color("493528"))
 		pic(root,Assets.item_texture(i),Rect2(49,y+5,80,78))
 		label(root,str(i.name),Rect2(142,y+9,280,30),21)
-		label(root,str(i.location).replace("shelf:","Display slot ").replace("storage:","Storage slot "),Rect2(142,y+44,280,29),16,MUTED)
+		label(root,slot_name(str(i.location)),Rect2(142,y+44,280,29),16,MUTED)
 		btn(root,"Selected" if s.selected==id else "Select",Rect2(435,y+23,115,41),func(): command("select",{"item":id}),active(s) or s.selected==id,s.selected==id)
 	btn(root,"Previous",Rect2(40,590,135,42),func(): stock_page-=1; refresh(),stock_page==0)
 	label(root,"%d / %d"%[stock_page+1,pages],Rect2(186,595,104,32),18,GOLD)
@@ -226,9 +238,9 @@ func draw_counter(s: Dictionary) -> void:
 	box(root,Rect2(898,518,362,159),Color("ead5b2"))
 	label(root,"PROPOSED PURCHASE" if s.visit_goal=="sell" else "PROPOSED DEAL",Rect2(912,528,334,27),17,Color("79512f"))
 	var offer := int(n.get("offer",0))
-	label(root,deal_text(s) if is_active else "No active offer",Rect2(912,555,335,43),25,Color("36251c"))
+	label(root,deal_text(s) if is_active else "No active offer",Rect2(912,554,335,36),21 if s.reservation.has("terms") else 24,Color("36251c"))
 	var pending: bool = is_active and n.status == "pending"
-	label(root,("You receive the trade item + gold" if s.reservation.has("terms") else "Awaiting your confirmation") if pending else ("Conversation only" if s.visit_goal in ["social","complaint"] and is_active else ("Customer offer — not yet accepted" if is_active else "Inspection only — no transaction")),Rect2(912,594,335,29),15,Color("79512f"))
+	label(root,deal_detail(s),Rect2(912,594,335,29),15,Color("79512f"))
 	btn(root,("Confirm buy" if s.visit_goal=="sell" else ("Confirm trade" if s.reservation.has("terms") else "Confirm sale")) if pending else "Review offer",Rect2(912,628,159,39),func(): review_or_confirm(pending),not is_active or s.visit_goal in ["social","complaint"],true)
 	btn(root,"Reject / leave",Rect2(1080,628,166,39),func(): act("reject","No deal."),not is_active)
 	if drawer == "responses" and is_active and n.status == "negotiating": draw_responses(s)

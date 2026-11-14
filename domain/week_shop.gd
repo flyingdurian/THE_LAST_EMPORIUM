@@ -98,11 +98,11 @@ func start_visit(s: Dictionary) -> Dictionary:
 	var sid:=log_event(s,"visit_started",{"customer":s.customer.id,"goal":goal})
 	s.session=Negotiation.start(s.customer,s.items[key],_content.policy,sid)
 	if goal=="sell":
-		s.session.offer=int(spec[3]); s.session.ask=int(spec[3]); s.session["seller_floor"]=int(spec[4])
+		s.session.offer=int(spec[3]); s.session.ask=int(spec[3]); s.session["seller_floor"]=int(spec[4]); s.session.speech_act="seller_opening"
 	elif goal=="barter":
 		s.session["trade_item"]=visit_item(s,spec,5)
 		s.session["trade_cash"]=int(spec[3])
-		s.session["trade_value"]=int(spec[4])
+		s.session["trade_value"]=int(spec[4]); s.session.speech_act="barter_opening"
 		s.items[s.session.trade_item]["perceived_g"]=int(spec[4])
 	elif goal in ["social","complaint"]:
 		s.session.offer=0; s.session.ask=0

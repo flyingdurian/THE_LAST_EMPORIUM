@@ -27,4 +27,7 @@ func run() -> void:
 	ui.command("next_day"); ui.command("open"); ui.open_counter()
 	await create_timer(0.4).timeout
 	await capture("week_marla_960")
+	ui.act("end","Until next time."); ui.command("next_customer"); ui.open_counter(); ui.act("end","Good day."); ui.command("close"); ui.command("next_day"); ui.command("open"); ui.open_counter()
+	ui.act("ask_rumor","What did you learn at the quarry?"); ui.act("barter","Let us trade."); root.size=Vector2i(1280,720); await create_timer(0.4).timeout
+	await capture("week_barter"); ui.ledger=true; ui.refresh(); root.size=Vector2i(960,540); await capture("week_barter_ledger_960")
 	quit()
