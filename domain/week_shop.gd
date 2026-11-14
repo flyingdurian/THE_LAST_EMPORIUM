@@ -64,7 +64,7 @@ func account(s: Dictionary, kind: String, cash: int, cost: int=0, value: int=0) 
 func commit(s: Dictionary) -> Dictionary:
 	persist_customer(s)
 	s.revision+=1
-	if not valid_state(s): return fail("Week invariant violation")
+	if not valid_state(s) or not journal_ok(s): return fail("Week invariant violation")
 	_state=s
 	return {"ok":true}
 func active_week(s: Dictionary) -> bool:
@@ -139,23 +139,13 @@ func special_act(s: Dictionary, cmd: Dictionary) -> Dictionary:
 		i["knowledge"]=2 if s.expertise>0 else 1; i.appraised=true
 		n.revision+=1; n.speech_act="seller_counter"
 		log_event(s,"appraised",{"item":i.instance,"level":i.knowledge}); return commit(s)
-	if goal=="sell" and k in ["counter","accept_offer","evidence","reassure","patient","flatter","firm"]:
-		if n.status!="negotiating": return fail("Confirm or decline")
-		var amount: Variant=a.get("amount",n.offer)
-		if typeof(amount)!=TYPE_INT or amount<1: return fail("Invalid offer")
-		var first: bool=not k in n.seen
-		if first: n.seen.append(k)
-		n["last_action"]=k
-		n.revision+=1; n.patience-=5
-		var floor_price: int=int(n.seller_floor)
-		if first and k in ["patient","reassure","evidence"] and (k!="evidence" or bool(i.get("appraised",false))):
-			n.offer=maxi(floor_price,int(n.offer)-5)
-		if n.patience<=0:
-			close_session(s); return commit(s)
-		if int(amount)>=floor_price and int(amount)<=int(s.gold) and storage_slot(s)!="" and (k=="accept_offer" or int(amount)>=int(n.offer)):
-			n.offer=int(amount); n.status="pending"; n.speech_act="seller_agreement"; n.expression="relieved"
-			s.reservation={"item":i.instance,"session":n.session,"revision":n.revision,"amount":n.offer}
-		else: n.speech_act="seller_counter"; n.expression="thoughtful"
+	if goal=="sell":
+		a["verified"]=bool(i.get("appraised",false))
+		var result: Dictionary=Negotiation.resolve_seller(n,a,s.customer,i,_content.policy,int(s.gold),storage_slot(s)!="")
+		if not result.ok: return result
+		s.session=result.state
+		for effect in result.effects: apply_effect(s,effect)
+		s.reservation={"item":i.instance,"session":s.session.session,"revision":s.session.revision,"amount":s.session.offer} if s.session.status=="pending" else {}
 		log_event(s,"turn",{"action":k,"session":n.session})
 		return commit(s)
 	if goal in ["social","complaint"] and k not in ["end","reject","dismiss","ban_confirm","violence_threat","insult","small_talk","reassure","flatter","firm","ban_threat","patient","banter"]:
@@ -325,7 +315,7 @@ func command(cmd: Dictionary) -> Dictionary:
 		var amount: int=int(s.gold)-int(before.gold)
 		account(s,"sale",amount,int(before.items[before.selected].acquisition_cost))
 	persist_customer(s)
-	if not valid_state(s):
+	if not valid_state(s) or not journal_ok(s):
 		_state=before; return fail("Week invariant violation")
 	_state=s
 	return result
@@ -335,14 +325,29 @@ func location_ok(s: Dictionary,loc: String) -> bool:
 	return parts.size()==2 and parts[0]=="storage" and parts[1].is_valid_int() and int(parts[1])>=8 and int(parts[1])<capacity(s) and str(int(parts[1]))==parts[1]
 func ShopLocation(loc: String) -> bool:
 	return valid_location(loc)
+func journal_ok(s: Dictionary) -> bool:
+	var cash: int=int(book.starting_gold)
+	var ids: Dictionary={}
+	for a in s.journal:
+		if not a is Dictionary or typeof(a.get("cash"))!=TYPE_INT or not a.has("id") or ids.has(a.id): return false
+		ids[a.id]=true; cash+=int(a.cash)
+	return cash==int(s.gold)
 func valid_state(s: Dictionary) -> bool:
+	for key in ["customer","items","profiles","session","reservation","selected","day","phase","gold","fixtures","week","journal","receipts","events","scheduled","reports","visit_index","visit_spec","visit_goal","visited","return_note","upgrades","expertise","expedition","rumor","debt","seed","day_start_gold","serial","revision"]:
+		if not s.has(key): return false
+	if not s.customer is Dictionary or not s.session is Dictionary or not s.reservation is Dictionary or not s.upgrades is Dictionary or not s.expedition is Dictionary or not s.rumor is Dictionary or not s.debt is Dictionary: return false
+	if not s.receipts is Array or not s.events is Array or not s.scheduled is Array or not s.reports is Array: return false
+	if not s.customer.has("id") or not s.customer.has("wallet"): return false
+	if not s.upgrades.has("storage") or not s.upgrades.has("sign"): return false
 	if not s.get("week",false) or not s.get("profiles") is Dictionary or not s.get("items") is Dictionary or not s.get("journal") is Array: return false
 	if not s.get("fixtures") is Dictionary or not Fixtures.valid(s.fixtures): return false
 	if not s.get("day",0) in [1,2,3,4,5] or not s.get("phase","") in ["morning","open","closed"] or typeof(s.get("gold"))!=TYPE_INT or s.gold<0: return false
 	if not s.items.has(s.get("selected","")) or not s.profiles.has(s.customer.id): return false
 	var occupied: Dictionary={}
 	for key in s.items:
+		if not s.items[key] is Dictionary: return false
 		var i: Dictionary=s.items[key]
+		if not i.has("instance") or not i.has("owner") or not i.has("location"): return false
 		if i.instance!=key or not i.has("acquisition_cost") or int(i.acquisition_cost)<0: return false
 		if i.owner=="shop":
 			if i.location!="delivery":
@@ -350,7 +355,7 @@ func valid_state(s: Dictionary) -> bool:
 				occupied[i.location]=true
 		elif not s.profiles.has(i.owner) or i.location!="customer": return false
 	for c in s.profiles.values():
-		if int(c.wallet)<0: return false
+		if not c is Dictionary or not c.has("wallet") or typeof(c.wallet)!=TYPE_INT or int(c.wallet)<0: return false
 	if int(s.customer.wallet)<0: return false
 	if active_week(s):
 		if s.session.item!=s.selected: return false
@@ -360,7 +365,7 @@ func valid_state(s: Dictionary) -> bool:
 	elif not s.reservation.is_empty(): return false
 	var seen: Dictionary={}
 	for r in s.receipts:
-		if seen.has(r.session): return false
+		if not r is Dictionary or not r.has("session") or seen.has(r.session): return false
 		seen[r.session]=true
 	return true
 func load_save() -> Dictionary:
@@ -368,8 +373,6 @@ func load_save() -> Dictionary:
 		if not FileAccess.file_exists(path): continue
 		var s: Variant=parse_save(FileAccess.get_file_as_string(path))
 		if s is Dictionary and valid_state(s):
-			var cash: int=int(book.starting_gold)
-			for a in s.journal: cash+=int(a.cash)
-			if cash!=int(s.gold): continue
+			if not journal_ok(s): continue
 			_state=s; return {"ok":true}
 	return fail("No valid Merchant's Week save")

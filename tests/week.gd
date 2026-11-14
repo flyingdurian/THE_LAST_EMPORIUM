@@ -136,9 +136,14 @@ func _initialize() -> void:
 	cmd(poor,"dispatch"); cmd(poor,"expertise"); cmd(poor,"upgrade",{"upgrade":"storage"}); cmd(poor,"upgrade",{"upgrade":"sign"})
 	cmd(poor,"open"); cmd(poor,"visit"); end_visit(poor); cmd(poor,"next_customer"); cmd(poor,"visit")
 	before=poor.snapshot(); act(poor,"accept_offer")
-	check(poor.snapshot().session.status!="pending" and poor.snapshot().gold==before.gold,"insufficient funds no purchase")
+	check(poor.snapshot()==before and poor.snapshot().session.status!="pending","insufficient funds no purchase")
 	end_visit(poor); advance(poor); cmd(poor,"open"); advance(poor); cmd(poor,"open"); cmd(poor,"close")
 	check(poor.snapshot().debt.warning and cmd(poor,"next_day").ok,"missed installment recoverable")
+	var poor_barter=Week.new("user://week_poor_barter.json")
+	for p in poor_barter.book.profiles:
+		if p.id=="bram_alder": p.wallet=10
+	poor_barter.reset(); cmd(poor_barter,"restock"); cmd(poor_barter,"open"); advance(poor_barter); cmd(poor_barter,"open"); advance(poor_barter); cmd(poor_barter,"open"); cmd(poor_barter,"visit")
+	before=poor_barter.snapshot(); check(not act(poor_barter,"barter").ok and poor_barter.snapshot()==before,"insufficient barter cash rejects both sides atomically")
 	check(Provider.render({"speech_act":"counter","offer":500,"expression":"neutral"},{"style":"blunt"}).contains("500g"),"offline dialogue authorized amount")
 	for f in [path,path+".bak",path+".tmp"]: DirAccess.remove_absolute(ProjectSettings.globalize_path(f))
 	print("WEEK RESULT: ",passed," passed, ",failed," failed")

@@ -13,3 +13,5 @@ All concept artwork originates from the AI-generated Last Emporium Gate B concep
 
 ## Gate E temporary assets
 `art/week/*.svg` are original source-drawn character and item illustrations for the development scenario, not approved production art. Vessa and original three merchandise retain D2 generated benchmark assets. No external licenses or third-party characters. Replace via project registry or documented path.
+
+Gate E portrait revision: five original generated character portraits on chroma green (Bram, Marla, Caldus, Nyx, Tovin), independently keyed and cropped, with subtle local expression retouches on the same source. PNG variants are temporary benchmark art. Source SVG portraits are retained as unused fallback studies; floor sprites and seven new merchandise icons remain source-drawn temporary assets. No third-party imagery.

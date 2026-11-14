@@ -255,41 +255,41 @@
     "bram_alder": {
       "floor": "res://art/week/bram_alder_floor.svg",
       "portraits": {
-        "neutral": "res://art/week/bram_alder_neutral.svg",
-        "pleased": "res://art/week/bram_alder_pleased.svg",
-        "offended": "res://art/week/bram_alder_offended.svg"
+        "neutral": "res://art/week/bram_alder_neutral.png",
+        "pleased": "res://art/week/bram_alder_pleased.png",
+        "offended": "res://art/week/bram_alder_offended.png"
       }
     },
     "marla_fen": {
       "floor": "res://art/week/marla_fen_floor.svg",
       "portraits": {
-        "neutral": "res://art/week/marla_fen_neutral.svg",
-        "pleased": "res://art/week/marla_fen_pleased.svg",
-        "offended": "res://art/week/marla_fen_offended.svg"
+        "neutral": "res://art/week/marla_fen_neutral.png",
+        "pleased": "res://art/week/marla_fen_pleased.png",
+        "offended": "res://art/week/marla_fen_offended.png"
       }
     },
     "ser_caldus": {
       "floor": "res://art/week/ser_caldus_floor.svg",
       "portraits": {
-        "neutral": "res://art/week/ser_caldus_neutral.svg",
-        "pleased": "res://art/week/ser_caldus_pleased.svg",
-        "offended": "res://art/week/ser_caldus_offended.svg"
+        "neutral": "res://art/week/ser_caldus_neutral.png",
+        "pleased": "res://art/week/ser_caldus_pleased.png",
+        "offended": "res://art/week/ser_caldus_offended.png"
       }
     },
     "nyx_veil": {
       "floor": "res://art/week/nyx_veil_floor.svg",
       "portraits": {
-        "neutral": "res://art/week/nyx_veil_neutral.svg",
-        "pleased": "res://art/week/nyx_veil_pleased.svg",
-        "offended": "res://art/week/nyx_veil_offended.svg"
+        "neutral": "res://art/week/nyx_veil_neutral.png",
+        "pleased": "res://art/week/nyx_veil_pleased.png",
+        "offended": "res://art/week/nyx_veil_offended.png"
       }
     },
     "tovin_reed": {
       "floor": "res://art/week/tovin_reed_floor.svg",
       "portraits": {
-        "neutral": "res://art/week/tovin_reed_neutral.svg",
-        "pleased": "res://art/week/tovin_reed_pleased.svg",
-        "offended": "res://art/week/tovin_reed_offended.svg"
+        "neutral": "res://art/week/tovin_reed_neutral.png",
+        "pleased": "res://art/week/tovin_reed_pleased.png",
+        "offended": "res://art/week/tovin_reed_offended.png"
       }
     }
   }

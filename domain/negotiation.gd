@@ -152,3 +152,40 @@ static func resolve(previous: Dictionary, action: Dictionary, c: Dictionary, ite
 # Only public terms and resolved performance cues cross the future renderer boundary.
 static func public_plan(s: Dictionary) -> Dictionary:
 	return {"speech_act":s.get("speech_act",""),"offer":int(s.get("offer",0)),"expression":s.get("expression","neutral"),"last_action":s.get("last_action","")}
+
+## Direction-aware seller policy. Reuses the same social reducer, then prices the
+## opposite side of the transaction against the seller's authored minimum.
+static func resolve_seller(previous: Dictionary, action: Dictionary, c: Dictionary, item: Dictionary, p: Dictionary, buyer_gold: int, room: bool) -> Dictionary:
+	var kind: String=action.get("type","")
+	var current: int=int(previous.offer)
+	var floor_price: int=int(previous.seller_floor)
+	var amount: Variant=action.get("amount",current)
+	if previous.status!="negotiating" and kind not in ["reject","end","violence_threat","ban_confirm"]: return {"ok":false,"error":"Confirm or decline the purchase"}
+	if typeof(amount)!=TYPE_INT or amount<1 or amount>1000000: return {"ok":false,"error":"Invalid purchase offer"}
+	if kind=="accept_offer":
+		if current>buyer_gold or not room: return {"ok":false,"error":"Not enough gold or storage"}
+		var s: Dictionary=previous.duplicate(true)
+		s.revision+=1; s.status="pending"; s.speech_act="seller_agreement"; s.expression="relieved"; s["last_action"]=kind
+		return {"ok":true,"state":s,"effects":[]}
+	var intent: Dictionary=action.duplicate(true)
+	intent.erase("amount")
+	# Prevent a buy-side price acceptance while retaining all generic social effects.
+	var social: Dictionary=previous.duplicate(true)
+	social.ask=1000000
+	if kind=="counter": intent["amount"]=1000000
+	var result: Dictionary=resolve(social,intent,c,item,p)
+	if not result.ok: return result
+	var s: Dictionary=result.state
+	if s.status=="closed": return result
+	s.status="negotiating"; s.offer=current; s.ask=current
+	var first: bool=not kind in previous.seen
+	if first and kind in ["patient","reassure","evidence","flatter","banter"] and (kind!="evidence" or bool(action.get("verified",false))):
+		var concession: int=clampi(int(s.rapport)-int(previous.rapport)+int(s.evidence)-int(previous.evidence),1,5)
+		s.offer=maxi(floor_price,current-concession)
+	# A seller may accept a sufficiently generous counteroffer. Funds and room are
+	# independent of their willingness; only the domain can commit the purchase.
+	if kind in ["counter","patient","reassure","evidence","flatter","firm"] and int(amount)>=int(s.offer) and int(amount)>=floor_price and int(amount)<=buyer_gold and room:
+		s.offer=int(amount); s.ask=int(amount); s.status="pending"; s.speech_act="seller_agreement"; s.expression="relieved"
+	else:
+		s.speech_act="seller_counter"
+	return {"ok":true,"state":s,"effects":result.effects}

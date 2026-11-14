@@ -23,5 +23,7 @@ run d2 --script res://tests/d2.gd --quit-after 120
 grep -F "D2 failures: 0" .artifacts/logs/d2.txt
 run week --script res://tests/week.gd --quit-after 120
 grep -E "WEEK RESULT: [0-9]+ passed, 0 failed" .artifacts/logs/week.txt
+run week_ui --script res://tests/week_ui.gd --quit-after 120
+grep -E "WEEK UI RESULT: [0-9]+ passed, 0 failed" .artifacts/logs/week_ui.txt
 run resolution_smoke res://ui/ResolutionCompare.tscn --quit-after 10
 printf '\nRuntime gate passed. Manual playtest still required.\n'

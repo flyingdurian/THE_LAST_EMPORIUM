@@ -45,6 +45,7 @@ func draw_responses(s: Dictionary) -> void:
 	var rows: Array=[["evidence","Show appraisal",true],["reassure","Acknowledge / reassure",not social],["patient","Bargain patiently",not social],["flatter","Flatter",not social],["small_talk","Personal conversation",false],["firm","Stand firm",false],["ban_threat","Threaten a ban",false],["insult","Insult",false],["dismiss","Dismiss customer",false],["violence_threat","Threaten violence",false],["end","End conversation",false]]
 	if s.visit_goal=="barter": rows[0]=["barter","Offer item + gold trade",false]
 	if s.visit_goal=="sell": rows[0]=["inspect","Inspect offered goods",false]
+	if social: rows[0]=["small_talk","Ask about their day",false]
 	if s.rumor.get("state","")=="known" and s.customer.id==s.rumor.get("knower",""): rows.append(["ask_rumor","Ask about the quarry",false])
 	else: rows.append(["banter","Blunt banter",false])
 	for idx in range(rows.size()):
@@ -203,6 +204,10 @@ func draw_counter(s: Dictionary) -> void:
 		label(root,"Condition " + str(Data.appraisal(i,s.expertise).condition),Rect2(1038,144,207,25),16,GOLD)
 		label(root,("Seller asks %dg" % n.offer) if s.visit_goal=="sell" and is_active else "Asking %dg" % n.get("ask",i.asking),Rect2(1038,169,207,25),17,GOLD)
 	btn(root,"Hide ledger" if ledger else "View ledger",Rect2(1065,213,194,40),func(): ledger = not ledger; refresh())
+	if is_active and s.visit_goal=="barter" and not ledger and n.has("trade_item"):
+		box(root,Rect2(944,260,316,73),Color("30221c"))
+		pic(root,Assets.item_texture(s.items[n.trade_item]),Rect2(950,265,60,60))
+		label(root,"Trade: "+str(s.items[n.trade_item].name)+"\n+ %dg"%n.trade_cash,Rect2(1018,265,232,61),16,GOLD)
 	if ledger: draw_ledger()
 	box(root,Rect2(22,518,858,159),Color("30221c"))
 	label(root,str(s.customer.name) if has_customer else "Counter",Rect2(36,528,820,26),18,GOLD)
@@ -223,7 +228,7 @@ func draw_counter(s: Dictionary) -> void:
 	var offer := int(n.get("offer",0))
 	label(root,deal_text(s) if is_active else "No active offer",Rect2(912,555,335,43),25,Color("36251c"))
 	var pending: bool = is_active and n.status == "pending"
-	label(root,"Awaiting your confirmation" if pending else ("Customer offer — not yet accepted" if is_active else "Inspection only — no transaction"),Rect2(912,594,335,29),15,Color("79512f"))
+	label(root,("You receive the trade item + gold" if s.reservation.has("terms") else "Awaiting your confirmation") if pending else ("Conversation only" if s.visit_goal in ["social","complaint"] and is_active else ("Customer offer — not yet accepted" if is_active else "Inspection only — no transaction")),Rect2(912,594,335,29),15,Color("79512f"))
 	btn(root,("Confirm buy" if s.visit_goal=="sell" else ("Confirm trade" if s.reservation.has("terms") else "Confirm sale")) if pending else "Review offer",Rect2(912,628,159,39),func(): review_or_confirm(pending),not is_active or s.visit_goal in ["social","complaint"],true)
 	btn(root,"Reject / leave",Rect2(1080,628,166,39),func(): act("reject","No deal."),not is_active)
 	if drawer == "responses" and is_active and n.status == "negotiating": draw_responses(s)

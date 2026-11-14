@@ -3,3 +3,5 @@ All artwork is temporary benchmark art, not approved final production. Edit data
 
 ## Gate E
 Seven additional item icons in art/week are source SVGs registered in data/d1_assets.json. Replace with transparent PNG and update registry path. Additional customer portraits: art/week/<customer_id>_<neutral|pleased|offended>.svg; matching floor sprite art/week/<customer_id>_floor.svg. In this development scenario these are temporary, simplified stand-ins; not final benchmark quality. Vessa retains D2 art. No runtime overrides.
+
+Gate E portrait revision: active portrait paths are in `week_customers` within `data/d1_assets.json`, now transparent PNGs. Replace all three variants with matching anchors; 320×540 source target. Floor sprites remain source SVGs, and may be replaced with PNGs at the registry path.
